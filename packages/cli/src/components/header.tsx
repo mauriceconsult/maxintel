@@ -1,6 +1,10 @@
 export function Header() {
   return (
-    <box alignItems="center" justifyContent="center" flexGrow={1}>
+    <box
+      alignItems="center"
+      justifyContent="center"
+      flexGrow={1}
+    >
       <box
         flexDirection="row"
         justifyContent="center"
