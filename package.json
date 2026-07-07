@@ -9,5 +9,9 @@
   },
   "overrides": {
     "@types/node": "^20"
+  },
+  "scripts": {
+    "dev": "bun run --watch packages/cli/src/index.tsx"
+  
   }
 }
