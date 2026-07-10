@@ -1,8 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "composite": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "@opentui/react",
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "types": ["bun"]
   },
   "include": ["src/**/*.ts"]
 }
