@@ -1,7 +1,11 @@
-import { ScrollBoxRenderable, TextAttributes } from "@opentui/core";
+// import { ScrollBoxRenderable, TextAttributes } from "@opentui/core";
+import { TextAttributes } from "@opentui/core";
+import type { ScrollBoxRenderable } from "@opentui/core";
 import type { RefObject } from "react";
 import { COMMANDS } from "./commands";
 import { getFilteredCommands } from "./filter-commands";
+import { useTheme } from "../../providers/theme";
+
 
 const MAX_VISIBLE_ITEMS = 8;
 const COMMAND_COL_WIDTH = Math.max(...COMMANDS.map((cmd) => cmd.name.length)) + 4;  
@@ -14,6 +18,7 @@ type CommandMenuProps = {
   onExecute: (command: string) => void;
 };
 export function CommandMenu({ query, selectedIndex, scrollRef, onSelect, onExecute }: CommandMenuProps) {
+  const {colors} = useTheme()
     const filteredCommands = getFilteredCommands(query);
     const visibleHeight = Math.min(filteredCommands.length, MAX_VISIBLE_ITEMS);
     
@@ -37,7 +42,7 @@ export function CommandMenu({ query, selectedIndex, scrollRef, onSelect, onExecu
                     paddingX={1}
                     height={1}
                     overflow="hidden"
-                    backgroundColor={isSelected ? "blue" : undefined}
+                    backgroundColor={isSelected ? colors.selection : undefined}
                     onMouseMove={() => onSelect(cmd.name)}
                     onMouseDown={() => onExecute(cmd.name)}
                   >

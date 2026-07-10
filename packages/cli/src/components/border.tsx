@@ -18,3 +18,7 @@ export const EmptyBorder = () => ({
   bottomT: "",
   cross: "",
 });
+export const splitBorderChars = {
+  ...EmptyBorder(),
+  vertical: "│",
+};

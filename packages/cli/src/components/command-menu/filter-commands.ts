@@ -1,5 +1,5 @@
 import { COMMANDS } from "./commands";
-import { Command } from "./types";
+import type { Command } from "./types";
 
 export function getFilteredCommands(query: string): Command[] {
   if (query.length === 0) return COMMANDS;
