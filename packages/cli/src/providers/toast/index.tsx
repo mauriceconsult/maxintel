@@ -30,7 +30,9 @@ type ToastProviderProps = {
 };
 export function ToastProvider({ children }: ToastProviderProps) {
   const [currentToast, setCurrentToast] = useState<ToastOptions | null>(null);
+  
   const timeoutHandleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
 
   const clearCurrentTimeout = useCallback(() => {
     if (timeoutHandleRef.current) {
