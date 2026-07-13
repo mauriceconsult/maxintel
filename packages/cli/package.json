@@ -7,13 +7,17 @@
     "dev": "bun run --watch src/index.tsx"
   },
   "dependencies": {
+    "@maxintel/shared": "workspace:*",
     "@opentui/core": "^0.4.3",
     "@opentui/react": "^0.4.3",
+    "hono": "^4.12.29",
     "opentui-spinner": "^0.0.7",
     "react": "^19.2.6",
-    "react-router": "^8.2.0"
+    "react-router": "^8.2.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@maxintel/server": "workspace:*",
     "@types/bun": "latest",
     "@types/react": "^19.2.17"
   },
