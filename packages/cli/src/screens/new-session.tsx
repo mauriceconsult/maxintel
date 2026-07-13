@@ -56,7 +56,7 @@ export function NewSession() {
           throw new Error(await getErrorMessage(res));
         }
         const session = await res.json();
-        navigate("/sessions/${sessionId}", {
+        navigate(`/sessions/${session.id}`, {
           replace: true,
           state: {
             session,
@@ -79,7 +79,7 @@ export function NewSession() {
   }, [state, navigate, toast]);
   if (!state?.message) return null;
   return (
-    <SessionShell onSubmit={() => {}} inputDisbled loading>
+    <SessionShell onSubmit={() => {}} inputDisabled loading>
       <UserMessage message={state.message} />
     </SessionShell>
   );
