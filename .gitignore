@@ -39,4 +39,4 @@ node_modules
 
 /generated/prisma
 
-.env.example.env
+.env.example
