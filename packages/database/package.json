@@ -2,11 +2,27 @@
   "name": "@maxintel/database",
   "type": "module",
   "private": true,
+  
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+
   "exports": {
-    ".":       "./src/index.ts",
-    "./enums": "./src/enums.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./enums": {
+      "types": "./dist/enums.d.ts",
+      "import": "./dist/enums.js"
+    }
   },
+
+  "files": [
+    "dist",
+    "prisma"
+  ],
   "scripts": {
+    "build": "tsup src/index.ts src/enums.ts --format esm --dts",
     "db:generate":  "bunx prisma generate",
     "db:push":      "bunx prisma db push",
     "db:migrate":   "bunx prisma migrate dev",

@@ -2,9 +2,15 @@
   "name": "@maxintel/cli",
   "private": true,
   "type": "module",
-  "module": "src/index.tsx",
+  "bin": {
+    "maxintel": "./dist/index.js",
+    "main": "./dist/index.js"
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "dev": "bun run --watch src/index.tsx"
+    "dev": "bun run --watch src/index.tsx",
+    "build": "bun build src/index.tsx --outdir dist --target bun"
   },
   "dependencies": {
     "@maxintel/database": "workspace:*",

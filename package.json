@@ -14,10 +14,17 @@
   "overrides": {
     "@types/node": "^20"
   },
+
   "scripts": {
-    "dev:cli": "bun run --watch packages/cli/src/index.tsx",
-    "dev:server": "bun run --hot packages/server/src/index.ts"
+    "build:shared": "bun run --cwd packages/shared build",
+    "build:database": "bun run --cwd packages/database build",
+    "build:server": "bun run --cwd packages/server build",
+    "build:cli": "bun run --cwd packages/cli build",
+
+    "build":
+      "bun run build:shared && bun run build:database && bun run build:server && bun run build:cli"
   },
+
   "dependencies": {
     "@ai-sdk/google": "^4.0.16",
     "hono": "^4.12.29"
