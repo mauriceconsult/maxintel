@@ -79,7 +79,7 @@ export function NewSession() {
   }, [state, navigate, toast]);
   if (!state?.message) return null;
   return (
-    <SessionShell onSubmit={() => {}} inputDisbled loading>
+    <SessionShell onSubmit={() => {}} loading>
       <UserMessage message={state.message} />
     </SessionShell>
   );

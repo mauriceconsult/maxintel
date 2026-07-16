@@ -7,12 +7,12 @@
     "./enums": "./src/enums.ts"
   },
   "scripts": {
-    "db:generate":  "prisma generate",
-    "db:push":      "prisma db push",
-    "db:migrate":   "prisma migrate dev",
-    "db:deploy":    "prisma migrate deploy",
-    "db:studio":    "prisma studio",
-    "db:reset":     "prisma migrate reset"
+    "db:generate":  "bunx prisma generate",
+    "db:push":      "bunx prisma db push",
+    "db:migrate":   "bunx prisma migrate dev",
+    "db:deploy":    "bunx prisma migrate deploy",
+    "db:studio":    "bunx prisma studio",
+    "db:reset":     "bunx prisma migrate reset"
   },
   "devDependencies": {
     "@types/node": "^20.19.43",

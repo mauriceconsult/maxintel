@@ -19,6 +19,7 @@
     "dev:server": "bun run --hot packages/server/src/index.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.16",
     "hono": "^4.12.29"
   }
 }
