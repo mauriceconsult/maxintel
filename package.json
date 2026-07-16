@@ -5,12 +5,12 @@
   "workspaces": ["packages/*"],
 
 "scripts": {
-  "build:shared": "cd packages/shared && bun run build",
-  "build:database": "cd packages/database && bun run build",
-  "build:packages": "bun run build:shared && bun run build:database",
-  "type-check": "bun run build:packages && bunx tsc --noEmit",
-  "build": "bun run build:packages && bun run build:app"
-},
+    "build:shared": "cd packages/shared && bun run build",
+    "build:database": "cd packages/database && bun run build",
+    "build:packages": "bun run build:shared && bun run build:database",
+    "type-check": "bun run build:packages && bunx tsc --noEmit",
+    "build": "bun run build:packages && bun run build:app"
+  },
 
   "devDependencies": {
     "@eslint/js": "^10.0.1",
