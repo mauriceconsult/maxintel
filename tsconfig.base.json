@@ -1,20 +1,32 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
+    "target": "ESNext",
     "lib": ["ESNext"],
     "module": "Preserve",
     "moduleResolution": "bundler",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "types": ["bun", "node"],
-    "target": "ESNext",
     "moduleDetection": "force",
     "allowJs": true,
-      "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "6.0",
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "@maxintel/shared": ["../packages/shared/dist"],
+      "@maxintel/shared/*": ["../packages/shared/dist/*"],
+      "@maxintel/database": ["../packages/database/dist"],
+      "@maxintel/database/*": ["../packages/database/dist/*"]
+    }
+  },
+  "include": ["src", "src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
+,
 
     // Bundler mode
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
     "noEmit": true,
 
     // Best practices
@@ -27,4 +39,3 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
   }
-}

@@ -15,16 +15,13 @@
     "@types/node": "^20"
   },
 
-  "scripts": {
-    "build:shared": "bun run --cwd packages/shared build",
-    "build:database": "bun run --cwd packages/database build",
-    "build:server": "bun run --cwd packages/server build",
-    "build:cli": "bun run --cwd packages/cli build",
-
-    "build":
-      "bun run --cwd packages/shared build && bun run --cwd packages/database build && bun run --cwd packages/server build && bun run --cwd packages/cli build"
-  },
-
+"scripts": {
+    "build:shared": "cd packages/shared && bun run build",
+    "build:database": "cd packages/database && bun run build",
+    "build:packages": "bun run build:shared && bun run build:database",
+    "build": "bun run build:packages && bun run build:app" 
+  
+},
   "dependencies": {
     "@ai-sdk/google": "^4.0.16",
     "hono": "^4.12.29"
