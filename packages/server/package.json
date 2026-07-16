@@ -13,8 +13,9 @@
 },
     "scripts": {
         "dev": "bun run --hot src/index.ts",
-       "build":"tsup src/index.ts --format esm",
+       "build": "tsup src/index.ts --format esm --dts",
         "postinstall": "bun run --cwd ../database db:generate"
+        
     },
     "dependencies": {
         "@ai-sdk/anthropic": "^4.0.12",
@@ -28,5 +29,9 @@
         "dotenv": "^17.4.2",
         "hono": "^4.12.29",
         "zod": "^4.4.3"
-    }
+    },
+    "devDependencies": {
+  "tsup": "^8.5.1",
+  "typescript": "^6"
+}
 }
