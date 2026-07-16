@@ -1,41 +1,44 @@
 {
   "compilerOptions": {
-    // Environment setup & latest features
+    // Environment
     "target": "ESNext",
     "lib": ["ESNext"],
     "module": "Preserve",
     "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "allowJs": true,
+    "ignoreDeprecations": "6.0",
+
+    // Bundler mode
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Correctness
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["bun", "node"],
-    "moduleDetection": "force",
-    "allowJs": true,
-    "ignoreDeprecations": "6.0",
-    "verbatimModuleSyntax": true,
-    "paths": {
-      "@maxintel/shared": ["../packages/shared/dist"],
-      "@maxintel/shared/*": ["../packages/shared/dist/*"],
-      "@maxintel/database": ["../packages/database/dist"],
-      "@maxintel/database/*": ["../packages/database/dist/*"]
-    }
-  },
-  "include": ["src", "src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "dist"]
-,
 
-    // Bundler mode
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
-
-    // Best practices
+    // Stricter checks
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-
-    // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "noPropertyAccessFromIndexSignature": false,
+
+    // Workspace package paths — point to src, not dist.
+    // dist doesn't exist until after build, which breaks type-checking in CI.
+    // Bun resolves src TypeScript natively so no build step is needed here.
+    "paths": {
+      "@maxintel/shared": ["./packages/shared/src/index.ts"],
+      "@maxintel/shared/*": ["./packages/shared/src/*"],
+      "@maxintel/database": ["./packages/database/src/index.ts"],
+      "@maxintel/database/*": ["./packages/database/src/*"]
+    }
+  },
+  "include": ["packages/*/src/**/*.ts", "packages/*/src/**/*.tsx"],
+  "exclude": ["node_modules", "**/dist/**"]
+}
