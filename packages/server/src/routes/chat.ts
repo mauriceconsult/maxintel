@@ -6,7 +6,7 @@ import { streamText as aiStreamText } from "ai";
 import { db } from "@maxintel/database";
 import { Mode, MessageStatus } from "@maxintel/database/enums";
 import { type ChatStreamEvent } from "@maxintel/shared";
-import { isSupportedChatModel, resolveChatModel } from "../lib/models";
+import { isSupportedChatModel, resolveChatModel } from "../lib/models.js";
 
 const submitSchema = z.object({
   content: z.string(),

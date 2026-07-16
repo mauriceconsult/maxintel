@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import sessions from "./routes/sessions";
+import sessions from "./routes/sessions.js";
+import chat from "./routes/chat.js";
 import { sentry } from "@sentry/hono/bun";
 import * as Sentry from "@sentry/hono/bun";
-import chat from "./routes/chat";
 
 // ── Typed routes — method-chained so AppType resolves correctly ───────────────
 // AppType is derived from this, not from the server wrapper below.
