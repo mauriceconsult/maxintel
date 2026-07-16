@@ -23,22 +23,23 @@ const createSessionSchema = z.object({
 
 // Explicit failure type — bridges @hono/zod-validator's intersection type
 // which prevents TypeScript from narrowing result.error automatically
-type ValidationFailure = {
+function isValidationFailure(result: unknown): result is {
   success: false;
-  error: z.ZodError<z.infer<typeof createSessionSchema>>;
-  target: string;
-};
+  error: z.ZodError;
+} {
+  return !(result as { success: boolean }).success;
+}
 
 const createSessionValidator = zValidator(
   "json",
   createSessionSchema,
   (result, c) => {
-    if (!result.success) {
-      const { error } = result as unknown as ValidationFailure;
+    if (isValidationFailure(result)) {
       Sentry.logger.warn("Session creation validator failed", {
         path: c.req.path,
-        issues: error.issues.length,
+        issues: result.error.issues.length,
       });
+
       return c.json({ error: "Invalid request body" }, 400);
     }
   },
