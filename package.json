@@ -4,13 +4,11 @@
   "version": "1.0.0",
   "workspaces": ["packages/*"],
   "scripts": {
-    "build:shared":   "bun run --filter @maxintel/shared build",
-    "build:database": "bun run --filter @maxintel/database build",
-    "build:server":   "bun run --filter @maxintel/server build",
-    "build:packages": "bun run build:shared && bun run build:database",
-    "type-check":     "bunx tsc --noEmit",
-    "build":          "bun run build:packages && bun run build:server",
-    "dev":            "bun run --filter @maxintel/server dev"
+    "build:shared": "bun run --cwd packages/shared build && bun run --cwd packages/database build",
+
+    "dev:server": "bun run build:shared && bun run --hot packages/server/src/index.ts",
+
+    "dev:cli": "bun run build:shared && bun run --watch packages/cli/src/index.tsx"
   },
   "devDependencies": {
     "@eslint/js":          "^10.0.1",
