@@ -8,18 +8,17 @@ import { useToast } from "../providers/toast";
 import { getErrorMessage } from "../lib/http-errors";
 import { apiClient } from "../lib/api-client";
 import prettyMs from "pretty-ms";
-import {
-  DEFAULT_CHAT_MODEL_ID,
-  type SupportedChatModelId,
-} from "@maxintel/shared";
+import { messagePartSchema, type SupportedChatModelId } from "@maxintel/shared";
 import { useChat } from "../hooks/use-chat";
 import type {
+  ClientMessagePart,
   Message,
   // ClientMessagePart
 } from "../hooks/use-chat";
 import { useKeyboard } from "@opentui/react";
 import { MessageStatus } from "@maxintel/database/enums";
 import { useKeyboardLayer } from "../providers/keyboard-layer";
+import { usePromptConfig } from "../providers/prompt-config";
 
 type SessionData = InferResponseType<
   (typeof apiClient.sessions)[":id"]["$get"],
@@ -44,13 +43,23 @@ function mapMessages(dbMessages: SessionData["messages"]): Message[] {
         model: m.model as SupportedChatModelId,
       };
     }
+    const parsedParts =
+      m.parts == null ? null : z.array(messagePartSchema).safeParse(m.parts);
+    const parts: ClientMessagePart[] = parsedParts?.success
+      ? parsedParts.data.map((p) =>
+          p.type === "tool-call"
+            ? { ...p, status: "done" as const, name: String(p.name) }
+            : p,
+        )
+      : [];
+
     return {
       id: m.id,
       role: "assistant",
       content: m.content,
       model: m.model as SupportedChatModelId,
       mode: m.mode,
-      parts: [{ type: "text", text: m.content }],
+      parts,
       ...(m.duration != null ? { duration: prettyMs(m.duration * 1000) } : {}),
       interrupted: m.status === MessageStatus.INTERRUPTED,
     };
@@ -58,7 +67,7 @@ function mapMessages(dbMessages: SessionData["messages"]): Message[] {
 }
 function ChatMessage({ msg }: { msg: Message }) {
   if (msg.role === "user") {
-    return <UserMessage message={msg.content} />;
+    return <UserMessage message={msg.content} mode={msg.mode} />;
   }
 
   if (msg.role === "error") {
@@ -79,6 +88,7 @@ function ChatMessage({ msg }: { msg: Message }) {
 function SessionChat({ session }: { session: SessionData }) {
   const [initialMessages] = useState(() => mapMessages(session.messages));
   const { isTopLayer } = useKeyboardLayer();
+  const { mode, model } = usePromptConfig();
   const { messages, streaming, submit, abort, interrupt } = useChat(
     session.id,
     initialMessages,
@@ -98,13 +108,7 @@ function SessionChat({ session }: { session: SessionData }) {
   });
   return (
     <SessionShell
-      onSubmit={(text) =>
-        submit({
-          userText: text,
-          mode: "BUILD",
-          model: DEFAULT_CHAT_MODEL_ID,
-        })
-      }
+      onSubmit={(text) => submit({ userText: text, mode, model })}
       loading={streaming.status === "streaming"}
       interruptible={streaming.status === "streaming"}
     >

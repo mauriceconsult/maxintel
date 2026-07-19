@@ -13,7 +13,7 @@ type SupportedChatModelDefinition = {
 
 export const SUPPORTED_CHAT_MODELS = [
   // -------------------------
-  // OpenAI (default provider)
+  // OpenAI
   // -------------------------
   {
     id: "gpt-5.6-terra",
@@ -68,7 +68,7 @@ export const SUPPORTED_CHAT_MODELS = [
   },
 
   // -------------------------
-  // Anthropic
+  // Anthropic (default provider)
   // -------------------------
   {
     id: "claude-opus-4.6",

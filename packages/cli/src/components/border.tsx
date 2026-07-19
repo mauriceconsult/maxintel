@@ -1,24 +1,15 @@
-export const EmptyBorder = () => ({
-  top: "",
-  bottom: "",
-  left: "",
-  right: "",
+import type { BorderCharacters } from "@opentui/core";
 
-  topLeft: "",
-  topRight: "",
-  bottomLeft: "",
-  bottomRight: "",
-
-  vertical: "",
-  horizontal: "",
-
-  leftT: "",
-  rightT: "",
-  topT: "",
-  bottomT: "",
-  cross: "",
-});
-export const splitBorderChars = {
-  ...EmptyBorder(),
-  vertical: "│",
+export const EmptyBorder: BorderCharacters = {
+    topLeft: "",
+    topRight: "",
+    bottomLeft: "",
+    bottomRight: "",
+    vertical: "",
+    horizontal: "",
+    leftT: "",
+    rightT: "",
+    topT: "",
+    bottomT: "",
+    cross: "",
 };
