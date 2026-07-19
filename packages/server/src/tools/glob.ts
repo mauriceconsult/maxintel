@@ -19,7 +19,7 @@ export function createGlobTool(cwd: string) {
     execute: async ({ pattern, path }) => {
       const resolved = resolve(cwd, path);
       if (!resolved.startsWith(cwd)) {
-        return { error: "Pathis outside the project directory" };
+        return { error: "Path is outside the project directory" };
       }
       try {
         const glob = new Bun.Glob(pattern);

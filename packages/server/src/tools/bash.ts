@@ -35,7 +35,7 @@ export function createBashTool(cwd: string) {
         const truncate = (s: string) =>
           s.length > MAX_OUTPUT
             ? s.slice(0, MAX_OUTPUT) +
-              `\n...(truncated, $(s.length) total chars)`
+              `\n...(truncated, ${s.length} total chars)`
             : s;
         return {
           stdout: truncate(stdout),

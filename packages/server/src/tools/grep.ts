@@ -24,7 +24,7 @@ export function createGrepTool(cwd: string) {
     execute: async ({ pattern, path, include }) => {
       const resolved = resolve(cwd, path);
       if (!resolved.startsWith(cwd)) {
-        return { error: "Pathis outside the project directory" };
+        return { error: "Path is outside the project directory" };
       }
       try {
         const args = [
