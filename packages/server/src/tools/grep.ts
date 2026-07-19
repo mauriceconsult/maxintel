@@ -40,27 +40,29 @@ export function createGrepTool(cwd: string) {
 
         args.push(pattern, resolved);
 
-        // TypeScript fix for Bun global
         const proc = Bun.spawn(["grep", ...args], {
           stdout: "pipe",
           stderr: "pipe",
           cwd,
         });
 
-        const stdout = await new Response(proc.stdout).text();
-        const stderr = await new Response(proc.stderr).text();
+        // Correct way to read Bun streams
+        const [stdoutText, stderrText] = await Promise.all([
+          new Response(proc.stdout).text(),
+          new Response(proc.stderr).text(),
+        ]);
 
-        await proc.exited;
+        const exitCode = await proc.exited;
 
-        if (proc.exitCode !== 0 && proc.exitCode !== 1) {
-          return { error: `grep failed: ${stderr.trim()}` };
+        if (exitCode !== 0 && exitCode !== 1) {
+          return { error: `grep failed: ${stderrText.trim()}` };
         }
 
-        if (!stdout.trim()) {
+        if (!stdoutText.trim()) {
           return { matches: [], message: "No matches found" };
         }
 
-        const lines = stdout.trim().split("\n");
+        const lines = stdoutText.trim().split("\n");
         const matches: { file: string; line: number; content: string }[] = [];
         let truncated = false;
 
