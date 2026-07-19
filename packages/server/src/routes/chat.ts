@@ -1,4 +1,4 @@
-import { db, MessageStatus, Mode, type Prisma } from "@maxintel/database";
+import type { Prisma } from "@maxintel/database";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { zValidator } from "@hono/zod-validator";
@@ -9,8 +9,8 @@ import {
   streamText as aiStreamText,
   stepCountIs,
 } from "ai";
-// import { db } from "@maxintel/database";
-// import { Mode, MessageStatus } from "@maxintel/database/enums";
+import { db } from "@maxintel/database";
+import { Mode, MessageStatus } from "@maxintel/database/enums";
 import {
   type ChatStreamEvent,
   type MessagePart,

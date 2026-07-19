@@ -2,10 +2,9 @@ import { Hono } from "hono";
 import * as Sentry from "@sentry/hono/bun";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-// import { findSupportedChatModel } from "@maxintel/shared";
-import { db, MessageStatus, Mode, Role } from "@maxintel/database";
-// import { Role, MessageStatus, Mode } from "@maxintel/database/enums";
 import { findSupportedChatModel } from "@maxintel/shared";
+import { db } from "@maxintel/database";
+import { Role, MessageStatus, Mode } from "@maxintel/database/enums";
 
 const createSessionSchema = z.object({
   title: z.string(),
