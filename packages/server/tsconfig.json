@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["bun", "node"] // ← must be explicit — overrides don't merge
+    "types": ["bun", "node"]    
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

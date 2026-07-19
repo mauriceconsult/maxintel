@@ -12,13 +12,11 @@ export function createGrepTool(cwd: string) {
       pattern: z.string().describe("Regex pattern to search for"),
       path: z
         .string()
-        .describe(
-          "Relative directory to search in (defaults to the project root",
-        )
+        .describe("Relative directory to search in (defaults to project root)")
         .default("."),
       include: z
         .string()
-        .describe("Glob pattern to filter (e.g., '**/*.ts', 'src/**/*.tsx'")
+        .describe("Glob pattern to filter (e.g., '**/*.ts', 'src/**/*.tsx')")
         .optional(),
     }),
     execute: async ({ pattern, path, include }) => {
@@ -26,6 +24,7 @@ export function createGrepTool(cwd: string) {
       if (!resolved.startsWith(cwd)) {
         return { error: "Path is outside the project directory" };
       }
+
       try {
         const args = [
           "-rn",
@@ -34,27 +33,37 @@ export function createGrepTool(cwd: string) {
           "--exclude-dir=.git",
           "-E",
         ];
+
         if (include) {
           args.push(`--include=${include}`);
         }
+
         args.push(pattern, resolved);
+
+        // TypeScript fix for Bun global
         const proc = Bun.spawn(["grep", ...args], {
           stdout: "pipe",
           stderr: "pipe",
           cwd,
         });
+
         const stdout = await new Response(proc.stdout).text();
         const stderr = await new Response(proc.stderr).text();
+
         await proc.exited;
+
         if (proc.exitCode !== 0 && proc.exitCode !== 1) {
           return { error: `grep failed: ${stderr.trim()}` };
         }
+
         if (!stdout.trim()) {
           return { matches: [], message: "No matches found" };
         }
+
         const lines = stdout.trim().split("\n");
         const matches: { file: string; line: number; content: string }[] = [];
         let truncated = false;
+
         for (const line of lines) {
           if (matches.length >= MAX_MATCHES) {
             truncated = true;
@@ -69,6 +78,7 @@ export function createGrepTool(cwd: string) {
             });
           }
         }
+
         return {
           matches,
           ...(truncated ? { truncated: true, totalMatches: lines.length } : {}),
