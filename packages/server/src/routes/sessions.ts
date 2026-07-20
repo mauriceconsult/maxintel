@@ -11,6 +11,9 @@ const createSessionSchema = z.object({
   cwd: z.string().optional(),
   initialMessage: z
     .object({
+      role: z.nativeEnum(Role), 
+      content: z.string(),
+      mode: z.nativeEnum(Mode), 
       role: z.nativeEnum(Role), // ← nativeEnum for Prisma enum objects
       content: z.string(),
       mode: z.nativeEnum(Mode), // ← same
@@ -21,6 +24,7 @@ const createSessionSchema = z.object({
     .optional(),
 });
 
+// Strip the intersection type so TypeScript can narrow .error
 // Extract just the failure shape — strips the intersection so TypeScript
 // can resolve .error without the { target: "json" } intersection blocking it.
 type SessionValidationFailure = {
@@ -54,12 +58,10 @@ const app = new Hono()
   })
   .get("/:id", async (c) => {
     const id = c.req.param("id");
-
     const session = await db.session.findUnique({
       where: { id },
       include: { messages: { orderBy: { createdAt: "asc" } } },
     });
-
     if (!session) {
       Sentry.logger.warn("Session not found", { sessionId: id });
       return c.json({ error: "Session not found" }, 404);
@@ -70,17 +72,13 @@ const app = new Hono()
   })
   .post("/", createSessionValidator, async (c) => {
     const { initialMessage, ...data } = c.req.valid("json");
-
     const session = await db.session.create({
       data: {
         ...data,
         userId: "Mock-User",
         ...(initialMessage && {
           messages: {
-            create: {
-              ...initialMessage,
-              status: MessageStatus.COMPLETE,
-            },
+            create: { ...initialMessage, status: MessageStatus.COMPLETE },
           },
         }),
       },

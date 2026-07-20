@@ -1,26 +1,43 @@
 {
   "name": "@maxintel/database",
-  "type": "module",
   "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+
   "exports": {
-    ".":       "./src/index.ts",
-    "./enums": "./src/enums.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./enums": {
+      "types": "./dist/enums.d.ts",
+      "import": "./dist/enums.js"
+    }
   },
+
+  "files": ["dist", "prisma"],
+
   "scripts": {
-    "db:generate":  "bunx prisma generate",
-    "db:push":      "bunx prisma db push",
-    "db:migrate":   "bunx prisma migrate dev",
-    "db:deploy":    "bunx prisma migrate deploy",
-    "db:studio":    "bunx prisma studio",
-    "db:reset":     "bunx prisma migrate reset"
+    "build": "tsup src/index.ts src/enums.ts --format esm --dts",
+    "db:generate": "bunx prisma generate",
+    "db:push": "bunx prisma db push",
+    "db:migrate": "bunx prisma migrate dev",
+    "db:deploy": "bunx prisma migrate deploy",
+    "db:studio": "bunx prisma studio",
+    "db:reset": "bunx prisma migrate reset"
   },
+
   "devDependencies": {
     "@types/node": "^20.19.43",
-    "prisma":      "^7.8.0"
+    "prisma": "^7.8.0",
+    "tsup": "^8.5.1",
+    "typescript": "^6"
   },
+
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client":     "^7.8.0",
-    "dotenv":             "^17.4.2"
+    "@prisma/client": "^7.8.0",
+    "dotenv": "^17.4.2"
   }
 }
