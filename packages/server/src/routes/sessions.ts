@@ -11,9 +11,9 @@ const createSessionSchema = z.object({
   cwd: z.string().optional(),
   initialMessage: z
     .object({
-      role: z.nativeEnum(Role), // ← was z.enum — Prisma enums need nativeEnum
+      role: z.nativeEnum(Role), 
       content: z.string(),
-      mode: z.nativeEnum(Mode), // ← same
+      mode: z.nativeEnum(Mode), 
       model: z
         .string()
         .refine((id) => !!findSupportedChatModel(id), "Unsupported model"),
