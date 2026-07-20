@@ -14,6 +14,9 @@ const createSessionSchema = z.object({
       role: z.nativeEnum(Role), 
       content: z.string(),
       mode: z.nativeEnum(Mode), 
+      role: z.nativeEnum(Role), // ← nativeEnum for Prisma enum objects
+      content: z.string(),
+      mode: z.nativeEnum(Mode), // ← same
       model: z
         .string()
         .refine((id) => !!findSupportedChatModel(id), "Unsupported model"),
@@ -22,6 +25,8 @@ const createSessionSchema = z.object({
 });
 
 // Strip the intersection type so TypeScript can narrow .error
+// Extract just the failure shape — strips the intersection so TypeScript
+// can resolve .error without the { target: "json" } intersection blocking it.
 type SessionValidationFailure = {
   success: false;
   error: z.ZodError<z.infer<typeof createSessionSchema>>;
@@ -61,6 +66,7 @@ const app = new Hono()
       Sentry.logger.warn("Session not found", { sessionId: id });
       return c.json({ error: "Session not found" }, 404);
     }
+
     Sentry.logger.info("Loaded session", { sessionId: session.id });
     return c.json(session);
   })
@@ -78,6 +84,7 @@ const app = new Hono()
       },
       include: { messages: true },
     });
+
     Sentry.logger.info("Created session", {
       sessionId: session.id,
       title: session.title,
