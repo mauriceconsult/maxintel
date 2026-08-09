@@ -33,7 +33,7 @@ const DEFAULT_REASONING_BUDGET = 10_000;
 const ANTHROPIC_PROVIDER_OPTIONS: Partial<
   Record<AnthropicModelId, ProviderOptions>
 > = {
-  "claude-opus-4.6": {
+  "claude-opus-4-6": {
     anthropic: {
       thinking: {
         type: "enabled",
@@ -42,7 +42,7 @@ const ANTHROPIC_PROVIDER_OPTIONS: Partial<
     },
   },
 
-  "claude-sonnet-4.6": {
+  "claude-sonnet-4-6": {
     anthropic: {
       thinking: {
         type: "enabled",
