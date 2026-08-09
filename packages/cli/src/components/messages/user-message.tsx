@@ -1,17 +1,19 @@
 import { EmptyBorder } from "../border";
 import { useTheme } from "../../providers/theme";
+import { Mode } from "@maxintel/database/enums";
 
 const USER_BORDER = {
-  ...EmptyBorder(),
+  ...EmptyBorder,
   vertical: "│",
   bottomLeft: "╵",
 } as const;
 
 type Props = {
   message: string;
+  mode: Mode;
 };
 
-export function UserMessage({ message }: Props) {
+export function UserMessage({ message, mode }: Props) {
   const { colors } = useTheme();
 
   return (
@@ -19,7 +21,7 @@ export function UserMessage({ message }: Props) {
       width="100%"
       border={["left"]}
       borderColor={colors.primary}
-      backgroundColor={colors.surface}
+      backgroundColor={mode === Mode.PLAN ? colors.planMode : colors.primary}
       paddingX={2}
       paddingY={1}
       alignItems="center"

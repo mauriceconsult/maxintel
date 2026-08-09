@@ -13,7 +13,7 @@ type SupportedChatModelDefinition = {
 
 export const SUPPORTED_CHAT_MODELS = [
   // -------------------------
-  // OpenAI (default provider)
+  // OpenAI
   // -------------------------
   {
     id: "gpt-5.6-terra",
@@ -68,10 +68,10 @@ export const SUPPORTED_CHAT_MODELS = [
   },
 
   // -------------------------
-  // Anthropic
+  // Anthropic (default provider)
   // -------------------------
   {
-    id: "claude-opus-4.6",
+    id: "claude-opus-4-6",
     provider: "anthropic",
     pricing: {
       inputUsdPerMilliontokens: 15,
@@ -79,7 +79,7 @@ export const SUPPORTED_CHAT_MODELS = [
     },
   },
   {
-    id: "claude-sonnet-4.6",
+    id: "claude-sonnet-4-6",
     provider: "anthropic",
     pricing: {
       inputUsdPerMilliontokens: 3,
@@ -87,7 +87,7 @@ export const SUPPORTED_CHAT_MODELS = [
     },
   },
   {
-    id: "claude-haiku-4.5",
+    id: "claude-haiku-4-5",
     provider: "anthropic",
     pricing: {
       inputUsdPerMilliontokens: 1,
@@ -103,4 +103,4 @@ export function findSupportedChatModel(modelId: string) {
   return SUPPORTED_CHAT_MODELS.find((model) => model.id === modelId);
 }
 
-export const DEFAULT_CHAT_MODEL_ID: SupportedChatModelId = "claude-opus-4.6";
+export const DEFAULT_CHAT_MODEL_ID: SupportedChatModelId = "claude-opus-4-6";

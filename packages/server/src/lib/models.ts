@@ -7,8 +7,11 @@ import {
   type SupportedChatModelId,
   type SupportedProvider,
 } from "@maxintel/shared";
-import type { LanguageModel } from "ai";
+import type { LanguageModel, streamText } from "ai";
 
+type ProviderOptions = NonNullable<
+  Parameters<typeof streamText>[0]["providerOptions"]
+>;
 // ── Per-provider model ID types ───────────────────────────────────────────────
 type ProviderModelId<P extends SupportedProvider> = Extract<
   SupportedChatModel,
@@ -24,7 +27,82 @@ export type ResolvedModel = {
   model: LanguageModel;
   provider: SupportedProvider;
   modelId: SupportedChatModelId;
+  providerOptions?: ProviderOptions;
 };
+const DEFAULT_REASONING_BUDGET = 10_000;
+const ANTHROPIC_PROVIDER_OPTIONS: Partial<
+  Record<AnthropicModelId, ProviderOptions>
+> = {
+  "claude-opus-4-6": {
+    anthropic: {
+      thinking: {
+        type: "enabled",
+        budgetTokens: DEFAULT_REASONING_BUDGET,
+      },
+    },
+  },
+
+  "claude-sonnet-4-6": {
+    anthropic: {
+      thinking: {
+        type: "enabled",
+        budgetTokens: DEFAULT_REASONING_BUDGET,
+      },
+    },
+  },
+
+  // Haiku currently has no extended thinking
+};
+const OPENAI_PROVIDER_OPTIONS: Partial<Record<OpenAIModelId, ProviderOptions>> =
+  {
+    "gpt-5.6-terra": {
+      openai: {
+        reasoning: {
+          effort: "high",
+          summary: "detailed",
+        },
+      },
+    },
+
+    "gpt-5.6-sol": {
+      openai: {
+        reasoning: {
+          effort: "medium",
+          summary: "detailed",
+        },
+      },
+    },
+
+    "gpt-5.6-luna": {
+      openai: {
+        reasoning: {
+          effort: "low",
+          summary: "detailed",
+        },
+      },
+    },
+};
+  
+const GOOGLE_PROVIDER_OPTIONS: Partial<Record<GoogleModelId, ProviderOptions>> =
+  {
+    "gemini-2.5-pro": {
+      google: {
+        thinkingConfig: {
+          thinkingBudget: 8192,
+        },
+      },
+    },
+
+    "gemini-2.5-flash": {
+      google: {
+        thinkingConfig: {
+          thinkingBudget: 4096,
+        },
+      },
+    },
+
+    // Flash Lite intentionally omitted
+  };
 
 // ── Exhaustiveness guard ──────────────────────────────────────────────────────
 function assertUnsupportedProvider(provider: never): never {
@@ -40,6 +118,7 @@ function resolveAnthropicModel(modelId: AnthropicModelId): ResolvedModel {
     model: anthropic(modelId as Parameters<typeof anthropic>[0]),
     provider: "anthropic",
     modelId,
+    providerOptions: ANTHROPIC_PROVIDER_OPTIONS[modelId]
   };
 }
 
@@ -48,6 +127,7 @@ function resolveOpenAIModel(modelId: OpenAIModelId): ResolvedModel {
     model: openai(modelId as Parameters<typeof openai>[0]),
     provider: "openai",
     modelId,
+    providerOptions: OPENAI_PROVIDER_OPTIONS[modelId]
   };
 }
 
@@ -56,6 +136,7 @@ function resolveGoogleModel(modelId: GoogleModelId): ResolvedModel {
     model: google(modelId as Parameters<typeof google>[0]),
     provider: "google",
     modelId,
+    providerOptions: GOOGLE_PROVIDER_OPTIONS[modelId],
   };
 }
 
