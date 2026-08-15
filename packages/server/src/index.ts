@@ -4,6 +4,9 @@ import sessions from "./routes/sessions";
 import { sentry } from "@sentry/hono/bun";
 import * as Sentry from "@sentry/hono/bun";
 import chat from "./routes/chat";
+import platform from "./routes/platform";
+import auth from "./routes/auth";
+import { requireAuth} from "./middleware/require-auth";
 
 // ── Typed routes — method-chained so AppType resolves correctly ───────────────
 // AppType is derived from this, not from the server wrapper below.
@@ -17,11 +20,18 @@ const routes = new Hono()
     throw new Error("My first Sentry error!");
   })
   .route("/sessions", sessions)
-  .route("/chat", chat);
+  .route("/chat", chat)
+  .route("/platform", platform)
+  .route("/auth", auth)
 
 // ── Server wrapper — Sentry + error handler, not part of AppType ──────────────
 // Sentry needs a reference to the app it wraps, so it can't be in the chain.
 const app = new Hono();
+
+app.use("*", async (c, next) => {
+  console.log(`[request] ${c.req.method} ${c.req.path}`);
+  await next();
+});
 
 app.use(
   sentry(app, {
@@ -61,6 +71,8 @@ app.onError((error, c) => {
   });
   return c.json({ error: "Internal server error" }, 500); // ← removed stray `sessions`
 });
+app.use("/sessions/*", requireAuth);
+app.use("/chat/*", requireAuth);
 
 app.route("/", routes);
 

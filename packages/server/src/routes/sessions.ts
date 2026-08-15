@@ -5,18 +5,16 @@ import { z } from "zod";
 import { findSupportedChatModel } from "@maxintel/shared";
 import { db } from "@maxintel/database";
 import { Role, MessageStatus, Mode } from "@maxintel/database/enums";
+import type { AuthenticatedEnv } from "../middleware/require-auth";
 
 const createSessionSchema = z.object({
   title: z.string(),
   cwd: z.string().optional(),
   initialMessage: z
     .object({
-      role: z.nativeEnum(Role), 
+      role: z.nativeEnum(Role),
       content: z.string(),
-      mode: z.nativeEnum(Mode), 
-      role: z.nativeEnum(Role), // ← nativeEnum for Prisma enum objects
-      content: z.string(),
-      mode: z.nativeEnum(Mode), // ← same
+      mode: z.nativeEnum(Mode),
       model: z
         .string()
         .refine((id) => !!findSupportedChatModel(id), "Unsupported model"),
@@ -47,9 +45,11 @@ const createSessionValidator = zValidator(
   },
 );
 
-const app = new Hono()
+const app = new Hono<AuthenticatedEnv>()
   .get("/", async (c) => {
+    const userId = c.get("userId");
     const sessions = await db.session.findMany({
+      where: {userId},
       orderBy: { createdAt: "desc" },
       select: { id: true, title: true, createdAt: true },
     });
@@ -58,8 +58,9 @@ const app = new Hono()
   })
   .get("/:id", async (c) => {
     const id = c.req.param("id");
+    const userId = c.get("userId");
     const session = await db.session.findUnique({
-      where: { id },
+      where: { id, userId },
       include: { messages: { orderBy: { createdAt: "asc" } } },
     });
     if (!session) {
@@ -71,11 +72,12 @@ const app = new Hono()
     return c.json(session);
   })
   .post("/", createSessionValidator, async (c) => {
+    const userId = c.get("userId");
     const { initialMessage, ...data } = c.req.valid("json");
     const session = await db.session.create({
       data: {
         ...data,
-        userId: "Mock-User",
+        userId,
         ...(initialMessage && {
           messages: {
             create: { ...initialMessage, status: MessageStatus.COMPLETE },

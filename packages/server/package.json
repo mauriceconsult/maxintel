@@ -9,21 +9,22 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "dev":         "bun run --hot src/index.ts",
-    "build":       "bun build src/index.ts --outdir dist --target bun",
+    "dev": "bun run --hot src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
     "postinstall": "bun run --cwd ../database db:generate"
   },
   "dependencies": {
-    "@ai-sdk/anthropic":    "^4.0.12",
-    "@ai-sdk/openai":       "^4.0.11",
-    "@hono/zod-validator":  "^0.8.0",
-    "@maxintel/database":   "workspace:*",
-    "@maxintel/shared":     "workspace:*",
-    "@sentry/bun":          "^10.65.0",
-    "@sentry/hono":         "^10.65.0",
-    "ai":                   "^7.0.22",
-    "dotenv":               "^17.4.2",
-    "hono":                 "^4.12.29",
-    "zod":                  "^4.4.3"
+    "@ai-sdk/anthropic": "^4.0.12",
+    "@ai-sdk/openai": "^4.0.11",
+    "@clerk/backend": "^3.16.5",
+    "@hono/zod-validator": "^0.8.0",
+    "@maxintel/database": "workspace:*",
+    "@maxintel/shared": "workspace:*",
+    "@sentry/bun": "^10.65.0",
+    "@sentry/hono": "^10.65.0",
+    "ai": "^7.0.22",
+    "dotenv": "^17.4.2",
+    "hono": "^4.12.29",
+    "zod": "^4.4.3"
   }
 }

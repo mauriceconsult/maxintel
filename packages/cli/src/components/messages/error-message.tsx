@@ -3,7 +3,7 @@ import { useTheme } from "../../providers/theme";
 import { TextAttributes } from "@opentui/core";
 
 const ERROR_BORDER = {
-  ...EmptyBorder(),
+  ...EmptyBorder,
   vertical: "│",
   bottomLeft: "╵",
 } as const;
