@@ -156,12 +156,12 @@ async function streamAIResponse(
           name: part.toolName,
           args,
         });
-        const event: ChatStreamEvent = {
-          type: "tool-call",
-          toolCallId: part.toolCallId,
-          toolName: part.toolName,
-          args,
-        };
+      const event: ChatStreamEvent = {
+        type: "tool-call",
+        id: part.toolCallId, 
+        name: part.toolName, 
+        args,
+      };
         await stream.writeSSE({
           event: "tool-call",
           data: JSON.stringify(event),
