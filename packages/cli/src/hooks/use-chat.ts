@@ -3,7 +3,7 @@ import { EventSourceParserStream } from "eventsource-parser/stream";
 import prettyMs from "pretty-ms";
 import type { ClientResponse } from "hono/client";
 import { apiClient } from "../lib/api-client";
-import { getErrorMessage } from "../lib/http-errors";
+// import { getErrorMessage } from "../lib/http-errors";
 import type { Mode } from "@maxintel/database/enums";
 import {
   chatStreamEventSchema,
@@ -141,15 +141,25 @@ export function useChat(sessionId: string, initialMessages: Message[]) {
     async (response: ClientResponse<unknown>, activeStream: ActiveStream) => {
       if (!isActiveRequest(activeStream.requestId)) return;
       if (!response.ok) {
-        const message = await getErrorMessage(response);
+        console.error("[CHAT HTTP ERROR]", {
+          status: response.status,
+          statusText: response.statusText,
+          contentType: response.headers.get("content-type"),
+        });
+
+        const rawErrorBody = await response.text();
+
+        console.error("[CHAT HTTP ERROR BODY]", rawErrorBody);
+
         updateMessages((prev) => [
           ...prev,
           {
             id: crypto.randomUUID(),
             role: "error",
-            content: message,
+            content: rawErrorBody || `HTTP ${response.status}`,
           },
         ]);
+
         return;
       }
       const parts: ClientMessagePart[] = [];
@@ -158,22 +168,30 @@ export function useChat(sessionId: string, initialMessages: Message[]) {
         .pipeThrough(new EventSourceParserStream());
       for await (const { data } of stream) {
         if (!isActiveRequest(activeStream.requestId)) return;
+
+        // Skip empty / terminator frames
+        if (!data || data === "[DONE]") continue;
+
         let event;
         try {
           event = chatStreamEventSchema.parse(JSON.parse(data));
         } catch (err) {
-          const message =
-            err instanceof Error ? err.message : "Invalid stream event";
+          console.error("[SSE JSON PARSE FAILED]", {
+            data,
+            error: err instanceof Error ? err.message : String(err),
+          });
           updateMessages((prev) => [
             ...prev,
             {
               id: crypto.randomUUID(),
               role: "error",
-              content: message,
+              content:
+                err instanceof Error ? err.message : "Invalid stream event",
             },
           ]);
           break;
         }
+
         switch (event.type) {
           case "reasoning-delta": {
             const last = parts[parts.length - 1];
@@ -188,8 +206,8 @@ export function useChat(sessionId: string, initialMessages: Message[]) {
           case "tool-call":
             parts.push({
               type: "tool-call",
-              id: event.toolCallId,
-              name: event.toolName,
+              id: event.id, // was event.toolCallId
+              name: event.name, // was event.toolName
               args: event.args,
               status: "calling",
             });

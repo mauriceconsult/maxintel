@@ -9,7 +9,7 @@ export const messagePartSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("tool-call"),
     id: z.string(),
-    name: z.string,
+    name: z.string(),
     args: toolCallArgsSchema,
     result: z.string().optional(),
   }),
@@ -31,9 +31,10 @@ export const chatStreamEventSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("tool-call"),
-    toolCallId: z.string(),
-    toolName: z.string(),
+    id: z.string(),
+    name: z.string(),
     args: toolCallArgsSchema,
+    result: z.string().optional(),
   }),
   z.object({
     type: z.literal("tool-result"),
