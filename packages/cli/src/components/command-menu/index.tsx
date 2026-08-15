@@ -32,39 +32,40 @@ export function CommandMenu({ query, selectedIndex, scrollRef, onSelect, onExecu
         )
     }
     return (
-        <scrollbox ref={scrollRef} height={visibleHeight}>
-            {filteredCommands.map((cmd, index) => {
-                const isSelected = index === selectedIndex;
-                return (
-                  <box
-                    key={cmd.name}
-                    flexDirection="row"
-                    paddingX={1}
-                    height={1}
-                    overflow="hidden"
-                    backgroundColor={isSelected ? colors.selection : undefined}
-                    onMouseMove={() => onSelect(cmd.name)}
-                    onMouseDown={() => onExecute(cmd.name)}
-                  >
-                    <box width={COMMAND_COL_WIDTH} overflow="hidden">
-                      <text
-                        selectable={false}
-                        fg={isSelected ? "black" : "white"}
-                      >
-                        /{cmd.name}
-                      </text>
-                      <box flexGrow={1} flexShrink={1} overflow="hidden">
-                        <text
-                          selectable={false}
-                          fg={isSelected ? "black" : "white"}
-                        >
-                          /{cmd.description}
-                        </text>
-                      </box>
-                    </box>
-                  </box>
-                );
-            })}
-        </scrollbox>
-    )
+      <scrollbox ref={scrollRef} height={visibleHeight}>
+        {filteredCommands.map((cmd, index) => {
+          const isSelected = index === selectedIndex;
+          return (
+            <box
+              key={cmd.name}
+              flexDirection="row"
+              paddingX={1}
+              height={1}
+              overflow="hidden"
+              backgroundColor={isSelected ? colors.selection : undefined}
+              onMouseMove={() => onSelect(cmd.name)}
+              onMouseDown={() => onExecute(cmd.name)}
+            >
+              {/* Name column — fixed width */}
+              <box width={COMMAND_COL_WIDTH} flexShrink={0}>
+                <text selectable={false} fg={isSelected ? "black" : "white"}>
+                  /{cmd.name}
+                </text>
+              </box>
+
+              {/* Description column — separate, can truncate independently */}
+              <box flexGrow={1} flexShrink={1} overflow="hidden">
+                <text
+                  selectable={false}
+                  fg={isSelected ? "black" : "gray"}
+                  attributes={TextAttributes.DIM}
+                >
+                  {cmd.description}
+                </text>
+              </box>
+            </box>
+          );
+        })}
+      </scrollbox>
+    );
 }
