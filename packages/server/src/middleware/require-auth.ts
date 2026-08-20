@@ -6,6 +6,7 @@ export type AuthenticatedEnv = {
     userId: string;
   };
 };
+
 export const requireAuth = createMiddleware<AuthenticatedEnv>(
   async (c, next) => {
     try {
@@ -16,7 +17,7 @@ export const requireAuth = createMiddleware<AuthenticatedEnv>(
       c.set("userId", auth.userId);
       await next();
     } catch {
-      return c.json({ error: "Unathorized. Run /login to continue." }, 401);
+      return c.json({ error: "Unauthorized. Run /login to continue." }, 401);
     }
   },
 );

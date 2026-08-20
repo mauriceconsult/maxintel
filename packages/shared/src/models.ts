@@ -3,7 +3,12 @@ export type ModelPricing = {
   outputUsdPerMilliontokens: number;
 };
 
-export type SupportedProvider = "anthropic" | "openai" | "google";
+export type SupportedProvider =
+  | "anthropic"
+  | "openai"
+  | "google"
+  | "xai"
+  | "deepseek";
 
 type SupportedChatModelDefinition = {
   id: string;
@@ -39,6 +44,7 @@ export const SUPPORTED_CHAT_MODELS = [
       outputUsdPerMilliontokens: 1.2,
     },
   },
+
   // -------------------------
   // Google
   // -------------------------
@@ -68,7 +74,7 @@ export const SUPPORTED_CHAT_MODELS = [
   },
 
   // -------------------------
-  // Anthropic (default provider)
+  // Anthropic
   // -------------------------
   {
     id: "claude-opus-4-6",
@@ -94,6 +100,38 @@ export const SUPPORTED_CHAT_MODELS = [
       outputUsdPerMilliontokens: 5,
     },
   },
+
+  // -------------------------
+  // xAI (Grok)
+  // -------------------------
+  {
+    id: "grok-4.5",
+    provider: "xai",
+    pricing: {
+      inputUsdPerMilliontokens: 2.0,
+      outputUsdPerMilliontokens: 6.0,
+    },
+  },
+
+  // -------------------------
+  // DeepSeek
+  // -------------------------
+  {
+    id: "deepseek-chat",
+    provider: "deepseek",
+    pricing: {
+      inputUsdPerMilliontokens: 0.28,
+      outputUsdPerMilliontokens: 0.42,
+    },
+  },
+  {
+    id: "deepseek-reasoner",
+    provider: "deepseek",
+    pricing: {
+      inputUsdPerMilliontokens: 0.55,
+      outputUsdPerMilliontokens: 2.19,
+    },
+  },
 ] as const satisfies readonly SupportedChatModelDefinition[];
 
 export type SupportedChatModel = (typeof SUPPORTED_CHAT_MODELS)[number];
@@ -103,4 +141,7 @@ export function findSupportedChatModel(modelId: string) {
   return SUPPORTED_CHAT_MODELS.find((model) => model.id === modelId);
 }
 
-export const DEFAULT_CHAT_MODEL_ID: SupportedChatModelId = "claude-opus-4-6";
+/** Prefer a low-cost default for production traffic; switch via env if needed. */
+export const DEFAULT_CHAT_MODEL_ID: SupportedChatModelId =
+  "claude-sonnet-4-6";
+  // "gemini-2.5-flash-lite";

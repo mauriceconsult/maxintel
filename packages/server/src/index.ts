@@ -1,17 +1,18 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import sessions from "./routes/sessions";
-import { sentry } from "@sentry/hono/bun";
 import * as Sentry from "@sentry/hono/bun";
+import { sentry } from "@sentry/hono/bun";
+
+import sessions from "./routes/sessions";
 import chat from "./routes/chat";
 import platform from "./routes/platform";
 import auth from "./routes/auth";
-import { requireAuth} from "./middleware/require-auth";
+import billing from "./routes/billing";
+import admin from "./routes/admin";
+import { requireAuth } from "./middleware/require-auth";
 
-// ── Typed routes — method-chained so AppType resolves correctly ───────────────
-// AppType is derived from this, not from the server wrapper below.
+// ── Typed routes (AppType) ────────────────────────────────────────────────────
 const routes = new Hono()
-
   .get("/debug-sentry", () => {
     Sentry.logger.info("User triggered test error", {
       action: "test_error_endpoint",
@@ -23,9 +24,10 @@ const routes = new Hono()
   .route("/chat", chat)
   .route("/platform", platform)
   .route("/auth", auth)
+  .route("/billing", billing)
+  .route("/admin", admin);
 
-// ── Server wrapper — Sentry + error handler, not part of AppType ──────────────
-// Sentry needs a reference to the app it wraps, so it can't be in the chain.
+// ── App wrapper ───────────────────────────────────────────────────────────────
 const app = new Hono();
 
 app.use("*", async (c, next) => {
@@ -35,7 +37,7 @@ app.use("*", async (c, next) => {
 
 app.use(
   sentry(app, {
-    dsn: process.env.SENTRY_DSN, // ← moved to env var (see below)
+    dsn: process.env.SENTRY_DSN,
     tracesSampleRate: 1.0,
     enableLogs: true,
     dataCollection: {
@@ -44,15 +46,6 @@ app.use(
     },
   }),
 );
-app.get("/debug-sentry", () => {
-  // Send a log before throwing the error
-  Sentry.logger.info("User triggered test error", {
-    action: "test_error_endpoint",
-  });
-  // Send a test metric before throwing the error
-  Sentry.metrics.count("test_counter", 1);
-  throw new Error("My first Sentry error!");
-});
 
 app.onError((error, c) => {
   if (error instanceof HTTPException) {
@@ -69,10 +62,14 @@ app.onError((error, c) => {
     method: c.req.method,
     message: error instanceof Error ? error.message : "Unknown error",
   });
-  return c.json({ error: "Internal server error" }, 500); // ← removed stray `sessions`
+  return c.json({ error: "Internal server error" }, 500);
 });
+
+// User JWT — only CLI session/chat surfaces
 app.use("/sessions/*", requireAuth);
 app.use("/chat/*", requireAuth);
+// Do NOT requireAuth on /platform, /billing, /admin, /auth
+// (API key / admin key / public webhook)
 
 app.route("/", routes);
 

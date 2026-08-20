@@ -6,41 +6,129 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
 enum Role {
   USER
   ASSISTANT
   ERROR
 }
+
 enum Mode {
   BUILD
   PLAN
 }
+
 enum MessageStatus {
   COMPLETE
   INTERRUPTED
 }
-model Session {
-  id String @id @default(cuid())
-  userId String
-  title String
-  cwd String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  messages Message[]
-  @@index([userId])
-}
-model Message {
-  id String @id @default(cuid())
-  sessionId String
-  role Role
-  status MessageStatus
-  model String
-  content String
-  parts Json?
-  mode Mode
-  duration Int?
-  createdAt DateTime @default(now())
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  @@index([sessionId])
 
+enum TransactionType {
+  TOPUP // MoMo payment confirmed
+  USAGE // generation consumed credits
+  BONUS // admin grant
+  REFUND // failed generation returned credits
+  ADJUSTMENT // manual correction
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────────────
+
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  cwd       String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Message {
+  id        String        @id @default(cuid())
+  sessionId String
+  role      Role
+  status    MessageStatus
+  model     String
+  content   String
+  parts     Json?
+  mode      Mode
+  duration  Int?
+  createdAt DateTime      @default(now())
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([sessionId, createdAt])
+}
+
+// ── Billing ───────────────────────────────────────────────────────────────────
+
+// packages/database/prisma/schema.prisma
+
+model ApiClient {
+  id              String              @id @default(uuid())
+  userId          String?             @unique   
+  name            String
+  apiKey          String              @unique
+  creditBalance   Int                 @default(0)
+  isActive        Boolean             @default(true)
+  monthlySpendCap Int?
+  notes           String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  transactions    CreditTransaction[]
+  usageRecords    UsageRecord[]
+
+  @@index([apiKey])
+  @@index([userId])     
+  @@index([isActive])
+}
+
+model CreditTransaction {
+  id           String          @id @default(uuid())
+  clientId     String
+  type         TransactionType
+  credits      Int // positive = added, negative = consumed
+  ugxAmount    Int? // UGX paid (topup only)
+  momoRef      String?         @unique
+  momoStatus   String? // PENDING | SUCCESSFUL | FAILED
+  description  String
+  metadata     Json? // model, tokens, bundle id
+  balanceAfter Int // snapshot after this transaction
+  createdAt    DateTime        @default(now())
+
+  client ApiClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([clientId, createdAt])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model UsageRecord {
+  id               String   @id @default(uuid())
+  clientId         String
+  transactionId    String?  @unique
+  requestId        String   @unique // idempotency key from caller
+  model            String
+  provider         String
+  generationType   String?
+  promptTokens     Int
+  completionTokens Int
+  totalTokens      Int
+  creditsUsed      Int
+  durationMs       Int?
+  createdAt        DateTime @default(now())
+
+  client ApiClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([clientId, createdAt])
+  @@index([model])
+  @@index([createdAt])
 }
