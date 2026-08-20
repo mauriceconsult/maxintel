@@ -13,7 +13,7 @@ export const apiClient = hc<AppType>(
       const headers = new Headers(init?.headers);
       const auth = getAuth();
       if (auth) {
-        headers.set("Authorization", `Bearer${auth.token}`);
+        headers.set("Authorization", `Bearer ${auth.token}`);
       }
       const response = await fetch(input, { ...init, headers });
       if (response.status === 401) {

@@ -1,6 +1,8 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
 import { google } from "@ai-sdk/google";
+import { xai } from "@ai-sdk/xai";
+import { deepseek } from "@ai-sdk/deepseek";
 import {
   findSupportedChatModel,
   type SupportedChatModel,
@@ -12,6 +14,7 @@ import type { LanguageModel, streamText } from "ai";
 type ProviderOptions = NonNullable<
   Parameters<typeof streamText>[0]["providerOptions"]
 >;
+
 // ── Per-provider model ID types ───────────────────────────────────────────────
 type ProviderModelId<P extends SupportedProvider> = Extract<
   SupportedChatModel,
@@ -21,6 +24,8 @@ type ProviderModelId<P extends SupportedProvider> = Extract<
 type AnthropicModelId = ProviderModelId<"anthropic">;
 type OpenAIModelId = ProviderModelId<"openai">;
 type GoogleModelId = ProviderModelId<"google">;
+type XaiModelId = ProviderModelId<"xai">;
+type DeepSeekModelId = ProviderModelId<"deepseek">;
 
 // ── Return type ───────────────────────────────────────────────────────────────
 export type ResolvedModel = {
@@ -29,7 +34,9 @@ export type ResolvedModel = {
   modelId: SupportedChatModelId;
   providerOptions?: ProviderOptions;
 };
+
 const DEFAULT_REASONING_BUDGET = 10_000;
+
 const ANTHROPIC_PROVIDER_OPTIONS: Partial<
   Record<AnthropicModelId, ProviderOptions>
 > = {
@@ -41,7 +48,6 @@ const ANTHROPIC_PROVIDER_OPTIONS: Partial<
       },
     },
   },
-
   "claude-sonnet-4-6": {
     anthropic: {
       thinking: {
@@ -50,9 +56,9 @@ const ANTHROPIC_PROVIDER_OPTIONS: Partial<
       },
     },
   },
-
-  // Haiku currently has no extended thinking
+  // Haiku: no extended thinking
 };
+
 const OPENAI_PROVIDER_OPTIONS: Partial<Record<OpenAIModelId, ProviderOptions>> =
   {
     "gpt-5.6-terra": {
@@ -63,7 +69,6 @@ const OPENAI_PROVIDER_OPTIONS: Partial<Record<OpenAIModelId, ProviderOptions>> =
         },
       },
     },
-
     "gpt-5.6-sol": {
       openai: {
         reasoning: {
@@ -72,7 +77,6 @@ const OPENAI_PROVIDER_OPTIONS: Partial<Record<OpenAIModelId, ProviderOptions>> =
         },
       },
     },
-
     "gpt-5.6-luna": {
       openai: {
         reasoning: {
@@ -81,8 +85,8 @@ const OPENAI_PROVIDER_OPTIONS: Partial<Record<OpenAIModelId, ProviderOptions>> =
         },
       },
     },
-};
-  
+  };
+
 const GOOGLE_PROVIDER_OPTIONS: Partial<Record<GoogleModelId, ProviderOptions>> =
   {
     "gemini-2.5-pro": {
@@ -92,7 +96,6 @@ const GOOGLE_PROVIDER_OPTIONS: Partial<Record<GoogleModelId, ProviderOptions>> =
         },
       },
     },
-
     "gemini-2.5-flash": {
       google: {
         thinkingConfig: {
@@ -100,25 +103,33 @@ const GOOGLE_PROVIDER_OPTIONS: Partial<Record<GoogleModelId, ProviderOptions>> =
         },
       },
     },
-
     // Flash Lite intentionally omitted
   };
 
+const XAI_PROVIDER_OPTIONS: Partial<Record<XaiModelId, ProviderOptions>> = {
+  // add grok-specific options here when needed
+};
+
+const DEEPSEEK_PROVIDER_OPTIONS: Partial<
+  Record<DeepSeekModelId, ProviderOptions>
+> = {
+  // reasoner may support provider-specific thinking flags later
+};
+
 // ── Exhaustiveness guard ──────────────────────────────────────────────────────
-function assertUnsupportedProvider(provider: never): never {
-  throw new Error(`Unsupported provider: ${provider}`);
+function assertUnsupportedProvider(model: never): never {
+  throw new Error(
+    `Unsupported chat model provider: ${(model as { provider: string }).provider}`,
+  );
 }
 
 // ── Per-provider resolvers ────────────────────────────────────────────────────
-// Cast bridges the gap between our SupportedChatModel ID union and the SDK's
-// own internal ID union — safe because findSupportedChatModel validates first.
-
 function resolveAnthropicModel(modelId: AnthropicModelId): ResolvedModel {
   return {
     model: anthropic(modelId as Parameters<typeof anthropic>[0]),
     provider: "anthropic",
     modelId,
-    providerOptions: ANTHROPIC_PROVIDER_OPTIONS[modelId]
+    providerOptions: ANTHROPIC_PROVIDER_OPTIONS[modelId],
   };
 }
 
@@ -127,7 +138,7 @@ function resolveOpenAIModel(modelId: OpenAIModelId): ResolvedModel {
     model: openai(modelId as Parameters<typeof openai>[0]),
     provider: "openai",
     modelId,
-    providerOptions: OPENAI_PROVIDER_OPTIONS[modelId]
+    providerOptions: OPENAI_PROVIDER_OPTIONS[modelId],
   };
 }
 
@@ -140,17 +151,44 @@ function resolveGoogleModel(modelId: GoogleModelId): ResolvedModel {
   };
 }
 
+function resolveXaiModel(modelId: XaiModelId): ResolvedModel {
+  return {
+    model: xai(modelId as Parameters<typeof xai>[0]),
+    provider: "xai",
+    modelId,
+    providerOptions: XAI_PROVIDER_OPTIONS[modelId],
+  };
+}
+
+function resolveDeepSeekModel(modelId: DeepSeekModelId): ResolvedModel {
+  return {
+    model: deepseek(modelId as Parameters<typeof deepseek>[0]),
+    provider: "deepseek",
+    modelId,
+    providerOptions: DEEPSEEK_PROVIDER_OPTIONS[modelId],
+  };
+}
+
 // ── Dispatcher ────────────────────────────────────────────────────────────────
 function resolveSupportedChatModel(model: SupportedChatModel): ResolvedModel {
   switch (model.provider) {
     case "anthropic":
       return resolveAnthropicModel(model.id);
+
     case "openai":
       return resolveOpenAIModel(model.id);
+
     case "google":
       return resolveGoogleModel(model.id);
+
+    case "xai":
+      return resolveXaiModel(model.id);
+
+    case "deepseek":
+      return resolveDeepSeekModel(model.id);
+
     default:
-      return assertUnsupportedProvider(model as never);
+      return assertUnsupportedProvider(model);
   }
 }
 
