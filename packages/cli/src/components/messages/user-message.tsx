@@ -1,6 +1,6 @@
 import { EmptyBorder } from "../border";
 import { useTheme } from "../../providers/theme";
-import { Mode } from "@maxintel/database/enums";
+import { Mode, type ModeType } from "@maxintel/shared";
 
 const USER_BORDER = {
   ...EmptyBorder,
@@ -10,7 +10,7 @@ const USER_BORDER = {
 
 type Props = {
   message: string;
-  mode: Mode;
+  mode: ModeType;
 };
 
 export function UserMessage({ message, mode }: Props) {

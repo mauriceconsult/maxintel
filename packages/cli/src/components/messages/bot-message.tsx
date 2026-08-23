@@ -1,20 +1,23 @@
-import { Mode } from "@maxintel/database/enums";
-import type {
-  ClientMessagePart,
-  ClientToolCallPart,
-} from "../../hooks/use-chat";
+import { Mode, type ModeType } from "@maxintel/shared";
+import type { Message } from "../../hooks/use-chat";
 import { useTheme } from "../../providers/theme";
 import { TextAttributes } from "@opentui/core";
 import type { BorderCharacters } from "@opentui/core";
 import { EmptyBorder } from "../border";
+import prettyMs from "pretty-ms";
+
+type ClientMessagePart = Message["parts"][number];
+type ToolPart = Extract<
+  ClientMessagePart,
+  { type: `tool-${string}` | "dynamic-tool" }
+>;
 
 type Props = {
   parts: ClientMessagePart[];
   model: string;
-  mode: Mode;
-  duration?: string;
+  mode: ModeType;
+  durationMs?: number;
   streaming?: boolean;
-  interrupted?: boolean;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -25,10 +28,14 @@ function formatToolName(name: string): string {
     .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
     .replace(/^./, (c) => c.toUpperCase());
 }
+function isToolPart(part: ClientMessagePart): part is ToolPart {
+  return part.type === "dynamic-tool" || part.type.startsWith("tool-");
+}
 
-
-function formatToolArgs(tc: ClientToolCallPart): string {
-  return Object.values(tc.args).map(String).join(" ");
+function formatToolArgs(tc: ToolPart): string {
+  if (!("input" in tc) || tc.input === null) return "";
+  if (typeof tc.input !== "object") return String(tc.input);
+  return Object.values(tc.input).map(String).join(" ");
 }
 
 // Full BorderCharacters object — satisfies the required type.
@@ -56,10 +63,9 @@ function groupConsecutiveParts(parts: ClientMessagePart[]): PartGroup[] {
     if (lastGroup && lastGroup.type === part.type) {
       lastGroup.parts.push(part);
     } else {
-      const key =
-        part.type === "tool-call"
-          ? `group-tc-${part.id}`
-          : `group-${part.type}-${i}`;
+      const key = isToolPart(part)
+        ? `group-tc-${part.toolCallId}`
+        : `group-${part.type}-${i}`;
       groups.push({ type: part.type, parts: [part], key });
     }
   }
@@ -69,19 +75,13 @@ function groupConsecutiveParts(parts: ClientMessagePart[]): PartGroup[] {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function BotMessage({
-  parts,
-  mode,
-  model,
-  duration,
-  interrupted = false,
-}: Props) {
+export function BotMessage({ parts, mode, model, durationMs }: Props) {
   const { colors } = useTheme();
 
   return (
     <box width="100%" alignItems="center">
-      {groupConsecutiveParts(parts).map((group) => (
-        <box key={group.key} paddingY={1} width="100%">
+      {groupConsecutiveParts(parts).map((group, i) => (
+        <box key={group.key} width="100%" paddingTop={i === 0 ? 0 : 1}>
           {group.parts.map((part, j) => {
             // ── Text part ─────────────────────────────────────────────────────
             if (part.type === "text") {
@@ -93,11 +93,15 @@ export function BotMessage({
             }
 
             // ── Tool-call part ────────────────────────────────────────────────
-            if (part.type === "tool-call") {
+            if (isToolPart(part)) {
+              const toolName =
+                part.type === "dynamic-tool"
+                  ? part.toolName
+                  : part.type.slice("tool-".length);
               const args = formatToolArgs(part); // ← was declared but never read
               return (
                 <box
-                  key={part.id}
+                  key={part.toolCallId}
                   border={["left"]}
                   borderColor={colors.thinkingBorder}
                   customBorderChars={LEFT_PIPE}
@@ -105,66 +109,63 @@ export function BotMessage({
                   paddingX={2}
                 >
                   <text>
-                    <em>{formatToolName(part.name)}</em>
+                    <em>{formatToolName(toolName)}</em>
                     {args ? ` ${args}` : ""}
-                    {part.status === "calling" ? " ..." : ""}
+                    {part.state !== "output-available" &&
+                    part.state !== "output-error"
+                      ? " ..."
+                      : ""}
+                    {part.state === "output-error" ? `${part.errorText}` : ""}
                   </text>
                 </box>
               );
             }
 
             // ── Reasoning part ────────────────────────────────────────────────
-            return (
-              <box
-                key={`reasoning-${j}`}
-                border={["left"]}
-                borderColor={colors.thinkingBorder}
-                customBorderChars={LEFT_PIPE}
-                width="100%"
-                paddingX={2}
-              >
-                <text attributes={TextAttributes.DIM}>
-                  <em fg={colors.thinking}>Thinking</em> {part.text}
-                </text>
-              </box>
-            );
+            if (part.type === "reasoning") {
+              return (
+                <box
+                  key={`reasoning-${j}`}
+                  border={["left"]}
+                  borderColor={colors.thinkingBorder}
+                  customBorderChars={LEFT_PIPE}
+                  width="100%"
+                  paddingX={2}
+                >
+                  <text attributes={TextAttributes.DIM}>
+                    <em fg={colors.thinking}>Thinking</em> {part.text}
+                  </text>
+                </box>
+              );
+            }
+            
+            return null;
           })}
         </box>
       ))}
 
       {/* ── Footer: mode / model / duration ─────────────────────────────── */}
-      <box paddingX={3} paddingBottom={1} gap={1} width="100%">
+      <box paddingX={3} paddingY={1} gap={1} width="100%">
         <box flexDirection="row" gap={2}>
-          <text
-            attributes={interrupted ? TextAttributes.DIM : 0}
-            fg={
-              interrupted
-                ? undefined
-                : mode === Mode.PLAN
-                  ? colors.planMode
-                  : colors.primary
-            }
-          >
+          <text fg={mode === Mode.PLAN ? colors.planMode : colors.primary}>
             ◉
           </text>
 
           <box flexDirection="row" gap={1}>
-            <text attributes={interrupted ? TextAttributes.DIM : 0}>
-              {mode === Mode.PLAN ? "Plan" : "Build"}
-            </text>
+            <text>{mode === Mode.PLAN ? "Plan" : "Build"}</text>
 
             <text attributes={TextAttributes.DIM} fg={colors.dimSeparator}>
               ›
             </text>
             <text attributes={TextAttributes.DIM}>{model}</text>
 
-            {(duration || interrupted) && (
+            {durationMs != null && (
               <>
                 <text attributes={TextAttributes.DIM} fg={colors.dimSeparator}>
                   ›
                 </text>
                 <text attributes={TextAttributes.DIM}>
-                  {interrupted ? "interrupted" : duration}
+                  {prettyMs(durationMs)}
                 </text>
               </>
             )}
