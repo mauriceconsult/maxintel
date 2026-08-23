@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { z } from "zod";
-import { Mode } from "@maxintel/database/enums";
+import { modeSchema } from "@maxintel/shared";
 import { useNavigate, useLocation } from "react-router";
 import { UserMessage } from "../components/messages";
 import { SessionShell } from "../components/session-shell";
@@ -10,7 +10,7 @@ import { getErrorMessage } from "../lib/http-errors";
 
 const newSessionStateSchema = z.object({
   message: z.string(),
-  mode: z.enum(Mode),
+  mode: modeSchema,
   model: z.string(),
 });
 
@@ -43,14 +43,7 @@ export function NewSession() {
       try {
         const res = await apiClient.sessions.$post({
           json: {
-            title: state.message.slice(0, 100),
-            cwd: process.cwd(),
-            initialMessage: {
-              role: "USER",
-              content: state.message,
-              mode: state.mode,
-              model: state.model,
-            },
+            title: state.message.slice(0, 100),        
           },
         });
         if (ignore) return;
@@ -61,7 +54,7 @@ export function NewSession() {
         navigate("/sessions/${sessionId}", {
           replace: true,
           state: {
-            session,
+            session, initialPrompt: state
           },
         });
       } catch (error) {

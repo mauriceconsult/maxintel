@@ -2,27 +2,11 @@ import { Hono } from "hono";
 import * as Sentry from "@sentry/hono/bun";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-// import { findSupportedChatModel } from "@maxintel/shared";
 import { db } from "@maxintel/database";
-import { Role, MessageStatus, Mode } from "@maxintel/database/enums";
 import type { AuthenticatedEnv } from "../middleware/require-auth";
-import { isSupportedChatModel } from "../lib/models";
-import { assertSufficientCredits } from "../billing/chat-billing";
-
 
 const createSessionSchema = z.object({
   title: z.string(),
-  cwd: z.string().optional(),
-  initialMessage: z
-    .object({
-      role: z.nativeEnum(Role),
-      content: z.string(),
-      mode: z.nativeEnum(Mode),
-      model: z
-        .string()
-        .refine(isSupportedChatModel, "Unsupported model"),
-    })
-    .optional(),
 });
 
 // Strip the intersection type so TypeScript can narrow .error
@@ -64,7 +48,6 @@ const app = new Hono<AuthenticatedEnv>()
     const userId = c.get("userId");
     const session = await db.session.findUnique({
       where: { id, userId },
-      include: { messages: { orderBy: { createdAt: "asc" } } },
     });
     if (!session) {
       Sentry.logger.warn("Session not found", { sessionId: id });
@@ -76,39 +59,13 @@ const app = new Hono<AuthenticatedEnv>()
   })
   .post("/", createSessionValidator, async (c) => {
     const userId = c.get("userId");
-    const { initialMessage, ...data } = c.req.valid("json");
-
-    // If the first message will trigger a generation (CLI auto-resume), gate now
-    if (initialMessage) {
-      const modelId = initialMessage.model;
-      const gate = await assertSufficientCredits({
-        userId,
-        modelId,
-      });
-      if (!gate.ok) {
-        return c.json(
-          {
-            error: gate.error,
-            balance: gate.balance,
-            required: "required" in gate ? gate.required : undefined,
-            upgradePath: "/billing/upgrade",
-          },
-          gate.status,
-        );
-      }
-    }
+    const data = c.req.valid("json");
 
     const session = await db.session.create({
       data: {
         ...data,
         userId,
-        ...(initialMessage && {
-          messages: {
-            create: { ...initialMessage, status: MessageStatus.COMPLETE },
-          },
-        }),
       },
-      include: { messages: true },
     });
 
     Sentry.logger.info("Created session", {

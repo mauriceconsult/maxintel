@@ -2,7 +2,7 @@ import { db } from "@maxintel/database";
 import { buildUpgradeResponse } from "../middleware/billing";
 import type { SupportedChatModelId } from "@maxintel/shared";
 import { checkCredits } from "../lib/credits";
-import { TransactionType } from "@maxintel/database/enums";
+import { TransactionType } from "@maxintel/database";
 import { findSupportedChatModel } from "@maxintel/shared";
 import { MODEL_CREDIT_COST } from "../lib/pricing";
 

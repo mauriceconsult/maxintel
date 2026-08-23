@@ -3,7 +3,7 @@
 // Pattern: check → reserve (pre-deduct) → generate → settle (exact amount).
 
 import { db, type Prisma } from "@maxintel/database";
-import { TransactionType } from "@maxintel/database/enums";
+import { TransactionType } from "@maxintel/database";
 import type { SupportedChatModelId } from "@maxintel/shared";
 import { calculateCreditsUsed, estimateCredits } from "./pricing";
 

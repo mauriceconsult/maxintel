@@ -5,24 +5,20 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
   },
-
   "files": ["dist"],
-
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts"
   },
-
   "dependencies": {
+    "ai": "^7.0.70",
     "zod": "^4.4.3"
   },
-
   "devDependencies": {
     "tsup": "^8",
     "typescript": "^6"

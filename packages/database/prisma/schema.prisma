@@ -9,22 +9,6 @@ datasource db {
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 
-enum Role {
-  USER
-  ASSISTANT
-  ERROR
-}
-
-enum Mode {
-  BUILD
-  PLAN
-}
-
-enum MessageStatus {
-  COMPLETE
-  INTERRUPTED
-}
-
 enum TransactionType {
   TOPUP // MoMo payment confirmed
   USAGE // generation consumed credits
@@ -38,38 +22,16 @@ enum TransactionType {
 model Session {
   id        String    @id @default(cuid())
   userId    String
-  title     String
-  cwd       String?
+  title     String  
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  messages  Message[]
+  messages  Json @default("[]")
 
   @@index([userId])
   @@index([createdAt])
 }
 
-model Message {
-  id        String        @id @default(cuid())
-  sessionId String
-  role      Role
-  status    MessageStatus
-  model     String
-  content   String
-  parts     Json?
-  mode      Mode
-  duration  Int?
-  createdAt DateTime      @default(now())
-
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@index([sessionId])
-  @@index([sessionId, createdAt])
-}
-
 // ── Billing ───────────────────────────────────────────────────────────────────
-
-// packages/database/prisma/schema.prisma
-
 model ApiClient {
   id              String              @id @default(uuid())
   userId          String?             @unique   

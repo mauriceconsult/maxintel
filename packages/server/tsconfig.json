@@ -3,7 +3,11 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["bun", "node"]    
+    "types": ["bun", "node"],  
+     "paths": {
+    "@maxintel/shared": ["./packages/shared/src/index.ts"],
+    "@maxintel/shared/*": ["./packages/shared/src/*"]
+  }  
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]
 }
