@@ -1,10 +1,6 @@
 // import open from "open";
 
-const API_URL = (
-  // process.env.API_URL
-  // ??
-  "http://localhost:3000")
-  .replace(
+const API_URL = (process.env.API_URL ?? "https://api.maxnovate.com").replace(
   /\/$/,
   "",
 );
@@ -60,7 +56,7 @@ export type UpgradeSummary = {
 // packages/cli/src/lib/api.ts  (wherever openUpgradePortal lives)
 
 import { apiClient } from "./api-client";
-import { getAuth }   from "./auth";
+import { getAuth } from "./auth";
 
 export async function openUpgradePortal() {
   // Typed RPC call — resolves to GET http://localhost:3000/billing/upgrade
@@ -70,7 +66,7 @@ export async function openUpgradePortal() {
       // Pass auth header so the endpoint can personalise the response
       // (shows client name + current balance)
       init: {
-        headers: (() : HeadersInit => {
+        headers: ((): HeadersInit => {
           const auth = getAuth();
           return auth ? { "X-Platform-Key": auth.token } : {};
         })(),
@@ -79,20 +75,20 @@ export async function openUpgradePortal() {
   );
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: string };
+    const err = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(err.error ?? `Upgrade portal returned ${res.status}`);
   }
 
   return res.json() as Promise<{
-    client?:   string;
-    balance?:  number;
+    client?: string;
+    balance?: number;
     bundles: Array<{
-      id:          string;
-      credits:     number;
-      ugx:         number;
+      id: string;
+      credits: number;
+      ugx: number;
       discountPct: number;
-      label:       string;
-      topUpUrl:    string;
+      label: string;
+      topUpUrl: string;
     }>;
     momoInstructions: string[];
   }>;
