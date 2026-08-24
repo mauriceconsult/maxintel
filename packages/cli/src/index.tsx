@@ -6,7 +6,6 @@ import { Home } from "./screens/home";
 import { NewSession } from "./screens/new-session";
 import { Session } from "./screens/session";
 
-
 const router = createMemoryRouter([
   {
     path: "/",
