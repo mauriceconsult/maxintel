@@ -3,7 +3,7 @@ import type { AppType } from "@maxintel/server";
 import { clearAuth, getAuth } from "./auth";
 
 export const apiClient = hc<AppType>(
-  process.env.API_URL ?? "https://api.maxnovate.com",
+  process.env.API_URL ?? "https://maxintel.maxnovate.com",
   {
     fetch: async (
       input: Parameters<typeof fetch>[0],

@@ -1,9 +1,8 @@
 // import open from "open";
 
-const API_URL = (process.env.API_URL ?? "https://api.maxnovate.com").replace(
-  /\/$/,
-  "",
-);
+const API_URL = (
+  process.env.API_URL ?? "https://maxintel.maxnovate.com"
+).replace(/\/$/, "");
 
 const PLATFORM_API_KEY =
   process.env.PLATFORM_API_KEY ?? process.env.MAXINTEL_API_KEY ?? "";
