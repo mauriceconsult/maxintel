@@ -19,7 +19,8 @@ import { useKeyboardLayer } from "../providers/keyboard-layer";
 import { usePromptConfig } from "../providers/prompt-config";
 
 type SessionData = InferResponseType<
-  (typeof apiClient.sessions)[":id"]["$get"],
+  (typeof apiClient.sessions &
+    Record<":id", typeof apiClient.sessions>)[":id"]["$get"],
   200
 >;
 const sessionLocationSchema = z.object({
@@ -133,7 +134,9 @@ export function Session() {
     let ignore = false;
     const fetchSession = async () => {
       try {
-        const res = await apiClient.sessions[":id"].$get({ param: { id } });
+        const sessionsById = apiClient.sessions as typeof apiClient.sessions &
+          Record<":id", typeof apiClient.sessions>;
+        const res = await sessionsById[":id"].$get({ param: { id } });
         if (ignore) return;
         if (!res.ok) throw new Error(await getErrorMessage(res));
         const resolved = await res.json();
