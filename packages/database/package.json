@@ -19,9 +19,9 @@
 
   "scripts": {
     "build": "tsup src/index.ts src/enums.ts --format esm --dts",
-    "db:generate": "bunx prisma generate",
+   "db:generate": "prisma generate --schema=prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev",
     "db:push": "bunx prisma db push",
-    "db:migrate": "bunx prisma migrate dev",
     "db:deploy": "bunx prisma migrate deploy",
     "db:studio": "bunx prisma studio",
     "db:reset": "bunx prisma migrate reset"
