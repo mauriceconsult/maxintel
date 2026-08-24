@@ -4,36 +4,31 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./enums": {
-      "types": "./dist/enums.d.ts"      
+      "types": "./dist/enums.d.ts"
     }
   },
-
   "files": ["dist", "prisma"],
-
   "scripts": {
-    "db:generate": "prisma generate",
-    "db:push":     "prisma db push",
-    "db:migrate":  "prisma migrate dev",
-    "db:deploy":   "prisma migrate deploy",
-    "build":       "prisma generate && tsup src/index.ts src/enums.ts --format esm --dts",
+    "db:generate": "bunx prisma generate",
+    "db:push": "bunx prisma db push",
+    "db:migrate": "bunx prisma migrate dev",
+    "db:deploy": "bunx prisma migrate deploy",
+    "build": "bunx prisma generate && tsup src/index.ts src/enums.ts --format esm --dts",
     "db:studio": "bunx prisma studio",
     "db:reset": "bunx prisma migrate reset"
   },
-
   "devDependencies": {
     "@types/node": "^20.19.43",
     "prisma": "^7.8.0",
     "tsup": "^8.5.1",
     "typescript": "^6"
   },
-
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
