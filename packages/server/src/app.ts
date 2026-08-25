@@ -1,7 +1,6 @@
 import { Hono } from "hono";
+import { logger } from "hono/logger";
 import { HTTPException } from "hono/http-exception";
-
-import { sentry } from "@sentry/hono/node";
 import * as Sentry from "@sentry/node";
 
 import sessions from "./routes/sessions";
@@ -12,7 +11,24 @@ import billing from "./routes/billing";
 import admin from "./routes/admin";
 import { requireAuth } from "./middleware/require-auth";
 
-export const routes = new Hono()
+export const app = new Hono();
+
+// 1. Global Logging
+app.use("*", logger());
+
+// 2. Sentry Request Tracing & Context
+app.use("*", async (c, next) => {
+  Sentry.setTag("path", c.req.path);
+  Sentry.setTag("method", c.req.method);
+  await next();
+});
+
+// 3. Auth Middleware for Protected Routes
+app.use("/sessions/*", requireAuth);
+app.use("/chat/*", requireAuth);
+
+// 4. Mount Sub-Routers
+app
   .route("/sessions", sessions)
   .route("/chat", chat)
   .route("/platform", platform)
@@ -20,38 +36,21 @@ export const routes = new Hono()
   .route("/billing", billing)
   .route("/admin", admin);
 
-export type AppType = typeof routes;
+// Export RPC AppType directly without unused runtime variable warnings
+export type AppType = typeof app;
 
-export const app = new Hono();
-
-// Sentry must be initialized before this middleware.
-// instrument.ts handles Sentry.init().
-app.use("*", sentry(app));
-
-app.use("*", async (c, next) => {
-  console.log(`[request] ${c.req.method} ${c.req.path}`);
-  await next();
-});
-
+// 5. Global Error Handler
 app.onError((error, c) => {
   if (error instanceof HTTPException) {
-    Sentry.logger.warn("Handled HTTP error", {
-      status: error.status,
-      path: c.req.path,
-    });
-
     return c.json({ error: error.message || "Request failed" }, error.status);
   }
 
-  Sentry.logger.error("Unhandled server error", {
-    path: c.req.path,
-    message: error instanceof Error ? error.message : "Unknown error",
+  Sentry.captureException(error, {
+    extra: {
+      path: c.req.path,
+      method: c.req.method,
+    },
   });
 
   return c.json({ error: "Internal server error" }, 500);
 });
-
-app.use("/sessions/*", requireAuth);
-app.use("/chat/*", requireAuth);
-
-app.route("/", routes);
