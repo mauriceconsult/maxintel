@@ -1,39 +1,51 @@
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-  unlinkSync,
-} from "node:fs";
+import { mkdir, readFile, writeFile, unlink, chmod } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-type AuthData = {
+export type AuthData = {
   token: string;
 };
+
 const AUTH_DIR = join(homedir(), ".maxintel");
 const AUTH_FILE = join(AUTH_DIR, "auth.json");
 
-export function getAuth(): AuthData | null {
+export async function getAuth(): Promise<AuthData | null> {
   try {
-    const data = readFileSync(AUTH_FILE, "utf-8");
+    const data = await readFile(AUTH_FILE, "utf-8");
     const parsed = JSON.parse(data) as Partial<AuthData>;
-    return typeof parsed.token === "string" ? { token: parsed.token } : null;
+
+    if (typeof parsed.token === "string" && parsed.token.trim().length > 0) {
+      return { token: parsed.token };
+    }
+    return null;
   } catch {
     return null;
   }
 }
-export function saveAuth(data: AuthData) {
-  if (!existsSync(AUTH_DIR)) {
-    // owner only permissions
-    mkdirSync(AUTH_DIR, { mode: 0o700 });
+
+export async function saveAuth(data: AuthData): Promise<void> {
+  if (!data?.token || typeof data.token !== "string") {
+    throw new Error("Invalid AuthData: token must be a non-empty string.");
   }
-  writeFileSync(AUTH_FILE, JSON.stringify(data), { mode: 0o600 });
+
+  // Ensure directory exists with owner-only access (rwx------)
+  await mkdir(AUTH_DIR, { recursive: true, mode: 0o700 });
+  await chmod(AUTH_DIR, 0o700).catch(() => {});
+
+  // Write file with owner-only access (rw-------)
+  await writeFile(AUTH_FILE, JSON.stringify(data, null, 2), {
+    encoding: "utf-8",
+    mode: 0o600,
+  });
+  await chmod(AUTH_FILE, 0o600).catch(() => {});
 }
-export function clearAuth() {
+
+export async function clearAuth(): Promise<void> {
   try {
-    unlinkSync(AUTH_FILE);
-  } catch {
-    // File does not exist
+    await unlink(AUTH_FILE);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
   }
 }
