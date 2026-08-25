@@ -76,8 +76,10 @@ export async function performLogin(): Promise<{ token: string }> {
       }, 500);
     };
 
+    const PORT = 4001;
+
     server = Bun.serve({
-      port: 0,
+      port: PORT,
 
       async fetch(req) {
         const url = new URL(req.url);
@@ -122,23 +124,22 @@ export async function performLogin(): Promise<{ token: string }> {
         }
 
         try {
-          // const redirectUri = `http://localhost:${server.port}/callback`;
-          const redirectUri = `http://127.0.0.1:${port}/callback`;
+        const redirectUri = `http://127.0.0.1:${PORT}/callback`;
 
-          const tokenRes = await fetch(`${clerkFrontendApi}/oauth/token`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-              Accept: "application/json",
-            },
-            body: new URLSearchParams({
-              grant_type: "authorization_code",
-              code,
-              redirect_uri: redirectUri,
-              client_id: clientId,
-              code_verifier: codeVerifier,
-            }),
-          });
+        const tokenRes = await fetch(`${clerkFrontendApi}/oauth/token`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Accept: "application/json",
+          },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            code,
+            redirect_uri: redirectUri,
+            client_id: clientId,
+            code_verifier: codeVerifier,
+          }),
+        });
 
           if (!tokenRes.ok) {
             const details = await tokenRes.text();
@@ -190,8 +191,7 @@ export async function performLogin(): Promise<{ token: string }> {
       port,
     });
 
-    // const redirectUri = `http://localhost:${port}/callback`;
-    const redirectUri = `http://127.0.0.1:${port}/callback`;
+     const redirectUri = `http://127.0.0.1:${PORT}/callback`;
 
     const authorizeUrl = new URL(`${clerkFrontendApi}/oauth/authorize`);
 

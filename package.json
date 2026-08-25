@@ -23,9 +23,16 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.63.0"
   },
-
   "dependencies": {
-    "hono": "4.13.3"
+    "@ai-sdk/anthropic": "^4.0.42",
+    "@ai-sdk/deepseek": "^3.0.32",
+    "@ai-sdk/google": "^4.0.51",
+    "@ai-sdk/openai": "^4.0.47",
+    "@ai-sdk/xai": "^4.0.44",
+    "@hono/node-server": "^1.13.7",
+    "@sentry/node": "^10.71.0",
+    "ai": "^7.0.79",
+    "hono": "^4.13.3"
   },
   "overrides": {
     "hono": "4.13.3"
