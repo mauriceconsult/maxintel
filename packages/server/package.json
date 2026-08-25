@@ -2,16 +2,17 @@
   "name": "@maxintel/server",
   "type": "module",
   "private": true,
-  "main": "./src/index.ts",
-  "module": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "./dist/app.js",
+  "module": "./dist/app.js",
+  "types": "./dist/app.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/app.js"
   },
   "scripts": {
-    "dev":           "bun run --hot src/index.ts",
-    "build":         "bun build src/app.ts --outdir dist --target node --format esm --external @prisma/client",
-    "postinstall":   "bun run --cwd ../database db:generate"
+    "dev": "bun run --hot src/index.ts",
+    "build": "bun build src/app.ts --outdir dist --target node",
+    "build:bun": "bun build src/index.ts --outdir dist --target bun",
+    "postinstall": "bun run --cwd ../database db:generate"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.12",
