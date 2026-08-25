@@ -1,8 +1,12 @@
-import { handle } from "@hono/node-server/vercel";
-import { app } from "../packages/server/src/app";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 export const config = {
   runtime: "nodejs",
 };
 
-export default handle(app);
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const { app } = await import("../packages/server/src/app");
+  const { handle } = await import("@hono/node-server/vercel");
+
+  return handle(app)(req, res);
+}
