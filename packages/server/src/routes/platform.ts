@@ -67,7 +67,7 @@ const app = new Hono<PlatformVariables>()
       requestId,
     } = parsed.data;
 
-    const envDefault = Bun.env.PLATFORM_DEFAULT_MODEL;
+    const envDefault = process.env.PLATFORM_DEFAULT_MODEL;
     const modelId = (parsed.data.model ??
       (envDefault && isSupportedChatModel(envDefault)
         ? envDefault
@@ -152,7 +152,7 @@ const app = new Hono<PlatformVariables>()
       service: "maxintel-platform",
       client: client.name,
       creditBalance: client.creditBalance,
-      defaultModel: Bun.env.PLATFORM_DEFAULT_MODEL ?? PLATFORM_DEFAULT_MODEL,
+      defaultModel: process.env.PLATFORM_DEFAULT_MODEL ?? PLATFORM_DEFAULT_MODEL,
     });
   });
 

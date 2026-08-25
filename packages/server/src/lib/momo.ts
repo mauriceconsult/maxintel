@@ -11,16 +11,16 @@ let _token: { value: string; expiresAt: number } | null = null;
 async function getToken(): Promise<string> {
   if (_token && _token.expiresAt > Date.now() + 60_000) return _token.value;
 
-  const base = Bun.env.MOMO_TARGET_ENVIRONMENT!;
+  const base = process.env.MOMO_TARGET_ENVIRONMENT!;
   const basic = Buffer.from(
-    `${Bun.env.MOMOUSER_ID}:${Bun.env.MOMOUSER_SECRET}`,
+    `${process.env.MOMOUSER_ID}:${process.env.MOMOUSER_SECRET}`,
   ).toString("base64");
 
   const res = await fetch(`${base}/collection/token/`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${basic}`,
-      "Ocp-Apim-Subscription-Key": Bun.env.MOMO_PRIMARY_KEY!,
+      "Ocp-Apim-Subscription-Key": process.env.MOMO_PRIMARY_KEY!,
     },
   });
 
@@ -56,17 +56,17 @@ export async function initiateTopUp({
 
   // The URL MTN will POST the payment result to.
   // Must be publicly reachable — localhost won't work in production.
-  const callbackUrl = `${Bun.env.MOMO_CALLBACK_HOST}/billing/webhook`;
+  const callbackUrl = `${process.env.MOMO_CALLBACK_HOST}/billing/webhook`;
 
   const res = await fetch(
-    `${Bun.env.MOMO_TARGET_ENVIRONMENT}/collection/v1_0/requesttopay`,
+    `${process.env.MOMO_TARGET_ENVIRONMENT}/collection/v1_0/requesttopay`,
     {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "X-Reference-Id": referenceId,
-        "X-Target-Environment": Bun.env.MOMO_ENV ?? "sandbox",
-        "Ocp-Apim-Subscription-Key": Bun.env.MOMO_PRIMARY_KEY!,
+        "X-Target-Environment": process.env.MOMO_ENV ?? "sandbox",
+        "Ocp-Apim-Subscription-Key": process.env.MOMO_PRIMARY_KEY!,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

@@ -1,10 +1,14 @@
 {
-  "buildCommand": "bun run build",
-  "framework": null,
+  "framework":       null,
+  "installCommand":  "bun install",
+  "buildCommand":    "bun run build:packages && bun run --filter @maxintel/server build && bun run --filter @maxintel/database db:deploy",
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
+  ],
   "functions": {
-    "api/**/*.ts": {
-      "memory": 1024,
-      "maxDuration": 15
+    "api/index.ts": {
+      "maxDuration": 300
     }
   }
 }

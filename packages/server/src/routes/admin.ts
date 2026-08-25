@@ -8,7 +8,7 @@ import { addCredits } from "../lib/credits";
 function requireAdminKey(c: {
   req: { header: (k: string) => string | undefined };
 }) {
-  return c.req.header("X-Admin-Key") === Bun.env.PLATFORM_ADMIN_KEY;
+  return c.req.header("X-Admin-Key") === process.env.PLATFORM_ADMIN_KEY;
 }
 
 const createClientSchema = z.object({
