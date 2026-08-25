@@ -1,7 +1,8 @@
 {
-  "framework":      null,
-  "installCommand": "bun install",
-  "buildCommand": "bun run build:packages && bun run --filter @maxintel/database db:deploy",
+  "framework":       null,
+  "installCommand":  "bun install",
+  "buildCommand":    "bun run build:packages && bun run --filter @maxintel/database db:deploy",
+  "outputDirectory": ".",
   "rewrites": [
     { "source": "/(.*)", "destination": "/api/index" }
   ],
