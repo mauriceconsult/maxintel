@@ -6,6 +6,10 @@ import { UserMessage, BotMessage, ErrorMessage } from "../components/messages";
 import { SessionShell } from "../components/session-shell";
 import { useToast } from "../providers/toast";
 import { getErrorMessage } from "../lib/http-errors";
+import {
+  parseInsufficientCredits,
+  formatInsufficientCredits,
+} from "../lib/upgrade";
 import { apiClient } from "../lib/api-client";
 import {
   modeSchema,
@@ -111,9 +115,16 @@ function SessionChat({
       {messages.map((msg) => (
         <ChatMessage key={msg.id} msg={msg} />
       ))}
-      {error && <ErrorMessage message={error.message} />}
+      {error && <ErrorMessage message={formatChatError(error)} />}
     </SessionShell>
   );
+}
+
+// A 402 arrives as a raw JSON body in error.message. Show the top-up sentence
+// and the MoMo checkout link instead of the payload.
+function formatChatError(error: Error): string {
+  const credits = parseInsufficientCredits(error);
+  return credits ? formatInsufficientCredits(credits) : error.message;
 }
 
 export function Session() {

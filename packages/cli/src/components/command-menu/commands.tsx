@@ -1,4 +1,4 @@
-import { openUpgradePortal, getCreditBalance } from "../../lib/upgrade";
+import { startMoMoTopUp, getCreditBalance } from "../../lib/upgrade";
 import { SUPPORTED_CHAT_MODELS } from "@maxintel/shared";
 import {
   AgentsDialogContent,
@@ -22,24 +22,22 @@ export const COMMANDS: Command[] = [
 
   {
     name: "upgrade",
-    description: "Buy credits",
+    description: "Top up credits with MTN MoMo",
     value: "/upgrade",
     action: async (ctx) => {
-      ctx.toast.show({ message: "Opening credits checkout ..." });
+      ctx.toast.show({ message: "Opening MoMo checkout in your browser ..." });
       try {
-        const summary = await openUpgradePortal();
-        const lines = [
-          summary.client
-            ? `${summary.client}: ${summary.balance ?? 0} credits`
-            : "Credit bundles",
-          ...summary.bundles
-            .slice(0, 4)
-            .map(
-              (b) =>
-                `  ${b.id}: ${b.label ?? `${b.credits} cr — UGX ${b.ugx}`}`,
-            ),
-        ];
-        ctx.toast.show({ message: lines.join("\n") });
+        const session = await startMoMoTopUp();
+        // The URL is shown as well as opened: `open` cannot do anything over
+        // SSH or in a bare terminal, and the link is safe to copy — it carries
+        // a short-lived signed token, not an API key.
+        ctx.toast.show({
+          message: [
+            `${session.client}: ${session.balance.toLocaleString()} credits`,
+            "Finish the MoMo top-up in your browser:",
+            session.checkoutUrl,
+          ].join("\n"),
+        });
       } catch (err) {
         ctx.toast.show({
           variant: "error",

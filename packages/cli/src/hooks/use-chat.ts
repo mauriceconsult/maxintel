@@ -15,6 +15,7 @@ import {
 import { apiClient } from "../lib/api-client";
 import { getAuth } from "../lib/auth";
 import { executeLocalTool } from "../lib/local-tools";
+import { openCheckoutForError } from "../lib/upgrade";
 
 export type ChatMessageMetaData = {
   mode?: ModeType;
@@ -102,6 +103,13 @@ export function useChat(sessionId: string, initialMessages: Message[]) {
             errorText: error instanceof Error ? error.message : String(error),
           }),
         );
+    },
+    onError(error) {
+      // A 402 is not really an error the user should have to decode — it means
+      // "pay and carry on". Open the MoMo checkout straight away; the rendered
+      // message (see formatChatError) carries the same link for terminals
+      // where a browser cannot be launched.
+      openCheckoutForError(error);
     },
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
   });

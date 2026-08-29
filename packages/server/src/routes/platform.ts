@@ -5,7 +5,7 @@ import { isSupportedChatModel, resolveChatModel } from "../lib/models";
 import { billingMiddleware, buildUpgradeResponse } from "../middleware/billing";
 import type { PlatformVariables } from "../types/context";
 import type { SupportedChatModelId } from "@maxintel/shared";
-import { checkCredits, deductCredits } from "../lib/credits";
+import { checkCreditsForClientId, deductCredits } from "../lib/credits";
 
 const PLATFORM_DEFAULT_MODEL = "gemini-2.5-flash-lite";
 const DEFAULT_TOKENS = 2_048;
@@ -74,13 +74,17 @@ const app = new Hono<PlatformVariables>()
         : PLATFORM_DEFAULT_MODEL)) as SupportedChatModelId;
 
     // ── Model-specific credit check (middleware can't do this — needs modelId) ─
-    const creditCheck = await checkCredits(client.id, modelId, maxTokens);
+    const creditCheck = await checkCreditsForClientId(
+      client.id,
+      modelId,
+      maxTokens,
+    );
 
     if (!creditCheck.ok && creditCheck.reason !== "inactive_client") {
       // Return structured upgrade nudge — calling app renders the top-up modal
       return c.json(
         buildUpgradeResponse(
-          client.name,
+          client,
           creditCheck.balance,
           creditCheck.required,
           modelId,

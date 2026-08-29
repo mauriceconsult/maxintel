@@ -38,8 +38,44 @@ export async function checkCredits(
   modelId: SupportedChatModelId,
   maxTokens?: number,
 ): Promise<CreditCheckResult> {
-  const client = await getClientByApiKey(apiKey);
+  return runCreditCheck(await getClientByApiKey(apiKey), modelId, maxTokens);
+}
 
+/**
+ * Same check, for callers that already resolved the client (the billing
+ * middleware, for one) and hold an id rather than an API key.
+ */
+export async function checkCreditsForClientId(
+  clientId: string,
+  modelId: SupportedChatModelId,
+  maxTokens?: number,
+): Promise<CreditCheckResult> {
+  const client = await db.apiClient.findUnique({
+    where: { id: clientId },
+    select: {
+      id: true,
+      name: true,
+      creditBalance: true,
+      isActive: true,
+      monthlySpendCap: true,
+    },
+  });
+
+  return runCreditCheck(client, modelId, maxTokens);
+}
+
+type CheckableClient = {
+  id: string;
+  creditBalance: number;
+  isActive: boolean;
+  monthlySpendCap: number | null;
+};
+
+async function runCreditCheck(
+  client: CheckableClient | null,
+  modelId: SupportedChatModelId,
+  maxTokens?: number,
+): Promise<CreditCheckResult> {
   if (!client || !client.isActive) {
     return { ok: false, reason: "inactive_client", balance: 0, required: 0 };
   }

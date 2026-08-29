@@ -62,7 +62,7 @@ export async function assertSufficientCredits({
     return {
       ok: false,
       status: 403,
-      body: buildUpgradeResponse(client.name, client.creditBalance, null),
+      body: buildUpgradeResponse(client, client.creditBalance, null),
     };
   }
 
@@ -74,7 +74,7 @@ export async function assertSufficientCredits({
       ok: false,
       status: 402,
       body: buildUpgradeResponse(
-        client.name,
+        client,
         check.balance,
         check.required,
         modelId,
