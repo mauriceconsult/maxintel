@@ -3,8 +3,12 @@
   "private": true,
   "type": "module",
   "module": "src/index.tsx",
+  "bin": {
+    "maxintel": "./bin/maxintel"
+  },
   "scripts": {
-    "dev": "bun run --watch src/index.tsx"
+    "dev": "bun run --watch src/index.tsx",
+    "build": "bun build src/index.tsx --outdir dist --target bun --external @opentui/core"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.87",

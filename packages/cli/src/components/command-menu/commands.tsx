@@ -22,7 +22,7 @@ export const COMMANDS: Command[] = [
 
   {
     name: "upgrade",
-    description: "Top up credits with MTN MoMo",
+    description: "MTN MoMo credit top-up",
     value: "/upgrade",
     action: async (ctx) => {
       ctx.toast.show({ message: "Opening MoMo checkout in your browser ..." });

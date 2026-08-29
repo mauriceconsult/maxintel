@@ -1,0 +1,9 @@
+#!/usr/bin/env bun
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config({ 
+    path: path.resolve(import.meta.dir, "../../.env"),
+    quiet: true,
+});
+await import("../src/index.tsx");
