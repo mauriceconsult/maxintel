@@ -129,7 +129,7 @@ export async function executeLocalTool(
         const match = line.match(/⌃(.+?):(\d*):(.*)$/);
         if (match) {
           matches.push({
-            file: relative(cwd, match[1]),
+            file: relative(cwd, match[1]!),
             line: Number(match[2]),
             content: match[3]!,
           });

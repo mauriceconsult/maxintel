@@ -7,7 +7,7 @@ const API_URL = (
 const PLATFORM_API_KEY =
   process.env.PLATFORM_API_KEY ?? process.env.MAXINTEL_API_KEY ?? "";
 
-function billingHeaders(): HeadersInit {
+function billingHeaders(): Record<string, string> {
   if (!PLATFORM_API_KEY) return {};
   return {
     "X-Platform-Key": PLATFORM_API_KEY,
@@ -65,7 +65,7 @@ export async function openUpgradePortal() {
       // Pass auth header so the endpoint can personalise the response
       // (shows client name + current balance)
       init: {
-        headers: ((): HeadersInit => {
+        headers: ((): Record<string, string> => {
           const auth = getAuth();
           return auth ? { "X-Platform-Key": auth.token } : {};
         })(),

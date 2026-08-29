@@ -11,12 +11,14 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts"
+    "build": "tsup src/index.ts --format esm --dts --tsconfig tsconfig.build.json"
   },
   "dependencies": {
-    "ai": "^7.0.70",
+    "ai": "^7.0.84",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useChat as useAiChat } from "@ai-sdk/react";
 import {
   DefaultChatTransport,
@@ -22,60 +22,81 @@ export type ChatMessageMetaData = {
   durationMs?: number;
   usage?: LanguageModelUsage;
 };
+
 type ChatTools = {
   [Name in keyof InferUITools<ToolContracts>]: {
     input: InferUITools<ToolContracts>[Name]["input"];
     output: unknown;
   };
 };
+
 export type Message = UIMessage<ChatMessageMetaData, never, ChatTools>;
+
+export type SubmitParams = {
+  userText: string;
+  mode: ModeType;
+  model: SupportedChatModelId;
+};
+
 export function useChat(sessionId: string, initialMessages: Message[]) {
   const transport = useMemo(() => {
     return new DefaultChatTransport<Message>({
       api: apiClient.chat.$url().toString(),
-      headers() {
+      headers(): Record<string, string> {
         const auth = getAuth();
-        return auth ? { Authorization: `Bearer ${auth.token}` } : new Headers();
+        return auth ? { Authorization: `Bearer ${auth.token}` } : {};
       },
       prepareSendMessagesRequest({ messages }) {
         const message = messages[messages.length - 1];
         if (!message) throw new Error("No messages to send");
-        const metadata = messages.findLast(
-          (m) => m.metadata?.mode && m.metadata?.model,
-        )?.metadata;
+        // Only the trailing turn is sent; the server persists history by session
+        // id. A tool-continuation send trails an assistant message, so the
+        // preceding user message is included to keep the pair intact.
         const previousMessage = messages[messages.length - 2];
         const requestMessages =
           message.role === "assistant" && previousMessage?.role === "user"
             ? [previousMessage, message]
             : [message];
+        // Falls back to the most recent turn that carried both, for sends that
+        // originate from the SDK rather than from submit().
+        const metadata =
+          message.metadata?.mode && message.metadata?.model
+            ? message.metadata
+            : messages.findLast((m) => m.metadata?.mode && m.metadata?.model)
+                ?.metadata;
         return {
           body: {
             id: sessionId,
             messages: requestMessages,
-            mode: message.metadata?.mode ?? metadata?.mode,
-            model: message.metadata?.model ?? metadata?.model,
+            mode: metadata?.mode,
+            model: metadata?.model,
           },
         };
       },
     });
   }, [sessionId]);
+
   const chat = useAiChat<Message>({
     id: sessionId,
     messages: initialMessages,
     transport,
     onToolCall({ toolCall }) {
+      // The server stamps mode onto the assistant message's metadata in the
+      // stream's "start" part, so it is present by the time a tool call opens.
+      // `chat` is read from the SDK's latest-callback ref, so this is current.
       const mode = chat.messages.at(-1)?.metadata?.mode ?? "BUILD";
+      const tool = toolCall.toolName as keyof ChatTools;
       void executeLocalTool(toolCall.toolName, toolCall.input, mode)
         .then((output) =>
           chat.addToolOutput({
-            tool: toolCall.toolName as keyof ChatTools,
+            tool,
             toolCallId: toolCall.toolCallId,
             output,
           }),
         )
-        .catch((error) =>
+        .catch((error: unknown) =>
           chat.addToolOutput({
-            tool: toolCall.toolName as keyof ChatTools,
+            tool,
             toolCallId: toolCall.toolCallId,
             state: "output-error",
             errorText: error instanceof Error ? error.message : String(error),
@@ -84,23 +105,32 @@ export function useChat(sessionId: string, initialMessages: Message[]) {
     },
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
   });
-  return {
-    messages: chat.messages,
-    status: chat.status,
-    error: chat.error,
-    submit: (params: {
-      userText: string;
-      mode: ModeType;
-      model: SupportedChatModelId;
-    }) =>
-      chat.sendMessage({
+
+  const { messages, status, error, sendMessage, stop } = chat;
+
+  // sendMessage/stop are bound to a Chat instance that only changes with
+  // sessionId, so these stay referentially stable across renders.
+  const submit = useCallback(
+    (params: SubmitParams) =>
+      sendMessage({
         text: params.userText,
         metadata: {
           mode: params.mode,
           model: params.model,
         },
       }),
-    abort: chat.stop,
-    interrupt: chat.stop,
-  };
+    [sendMessage],
+  );
+
+  return useMemo(
+    () => ({
+      messages,
+      status,
+      error,
+      submit,
+      abort: stop,
+      interrupt: stop,
+    }),
+    [messages, status, error, submit, stop],
+  );
 }

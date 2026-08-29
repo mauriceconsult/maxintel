@@ -8,7 +8,7 @@ import { useToast } from "../providers/toast";
 import { getErrorMessage } from "../lib/http-errors";
 import { apiClient } from "../lib/api-client";
 import {
-  type SupportedChatModel,
+  modeSchema,
   type ModeType,
   type SupportedChatModelId,
 } from "@maxintel/shared";
@@ -19,8 +19,7 @@ import { useKeyboardLayer } from "../providers/keyboard-layer";
 import { usePromptConfig } from "../providers/prompt-config";
 
 type SessionData = InferResponseType<
-  (typeof apiClient.sessions &
-    Record<":id", typeof apiClient.sessions>)[":id"]["$get"],
+  (typeof apiClient.sessions)[":id"]["$get"],
   200
 >;
 const sessionLocationSchema = z.object({
@@ -30,10 +29,12 @@ const sessionLocationSchema = z.object({
   initialPrompt: z
     .object({
       message: z.string(),
-      mode: z.custom<ModeType>(),
-      model: z
-        .custom<SupportedChatModel>()
-        .transform((model): SupportedChatModelId => model.id),
+      mode: modeSchema,
+      // The model arrives from the home screen as an id string, not a
+      // SupportedChatModel object.
+      model: z.custom<SupportedChatModelId>(
+        (value) => typeof value === "string" && value.length > 0,
+      ),
     })
     .optional(),
 });
@@ -134,9 +135,7 @@ export function Session() {
     let ignore = false;
     const fetchSession = async () => {
       try {
-        const sessionsById = apiClient.sessions as typeof apiClient.sessions &
-          Record<":id", typeof apiClient.sessions>;
-        const res = await sessionsById[":id"].$get({ param: { id } });
+        const res = await apiClient.sessions[":id"].$get({ param: { id } });
         if (ignore) return;
         if (!res.ok) throw new Error(await getErrorMessage(res));
         const resolved = await res.json();

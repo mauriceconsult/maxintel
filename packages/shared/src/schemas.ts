@@ -8,9 +8,10 @@ export const Mode = {
 
 export const modeSchema = z.enum([Mode.BUILD, Mode.PLAN]);
 export type ModeType = (typeof Mode)[keyof typeof Mode];
+
 export const toolInputSchemas = {
   readFile: z.object({
-  path: z.string().describe("Relative path to the file to read"),
+    path: z.string().describe("Relative path to the file to read"),
   }),
   listDirectory: z.object({
     path: z.string().default(".").describe("Relative directory path to list"),
@@ -22,7 +23,10 @@ export const toolInputSchemas = {
   grep: z.object({
     pattern: z.string().describe("Regex pattern to search for"),
     path: z.string().default(".").describe("Directory to search from"),
-    include: z.string().optional().describe("Optional glob for files to include"),
+    include: z
+      .string()
+      .optional()
+      .describe("Optional glob for files to include"),
   }),
   writeFile: z.object({
     path: z.string().describe("Relative path to write"),
@@ -35,32 +39,41 @@ export const toolInputSchemas = {
   }),
   bash: z.object({
     command: z.string().describe("Shell command to run"),
-    description: z.string().optional().describe("Short description of the command"),
+    description: z
+      .string()
+      .optional()
+      .describe("Short description of the command"),
     timeout: z.number().optional().describe("Timeout in milliseconds"),
   }),
-} as const;
+};
 
-export const readOnlyToolContracts: ToolSet = {
+export const readOnlyToolContracts = {
   readFile: tool({
     description: "Read a file from the current project directory.",
     inputSchema: toolInputSchemas.readFile,
   }),
   listDirectory: tool({
-    description: "List entries in a directory under the current project directory.",
+    description:
+      "List entries in a directory under the current project directory.",
     inputSchema: toolInputSchemas.listDirectory,
   }),
   glob: tool({
-    description: "Find files matching a glob pattern under the current project directory.",
+    description:
+      "Find files matching a glob pattern under the current project directory.",
     inputSchema: toolInputSchemas.glob,
   }),
   grep: tool({
-    description: "Search file contents with a regular expression under the current project directory.",
+    description:
+      "Search file contents with a regular expression under the current project directory.",
     inputSchema: toolInputSchemas.grep,
-  })
-} as const;
+  }),
+} as const satisfies ToolSet;
 
-export const buildToolContracts: ToolSet = {
-  ...readOnlyToolContracts,
+export const buildToolContracts = {
+  readFile: readOnlyToolContracts.readFile,
+  listDirectory: readOnlyToolContracts.listDirectory,
+  glob: readOnlyToolContracts.glob,
+  grep: readOnlyToolContracts.grep,
   writeFile: tool({
     description:
       "Create or overwrite a file under the current project directory.",
@@ -75,10 +88,12 @@ export const buildToolContracts: ToolSet = {
     description: "Run a shell command in the current project directory.",
     inputSchema: toolInputSchemas.bash,
   }),
-} as const;
+} as const satisfies ToolSet;
 
 export type ToolContracts = typeof buildToolContracts;
 
-export function getToolContracts(mode: ModeType): ToolSet {
+export function getToolContracts(
+  mode: ModeType,
+): typeof readOnlyToolContracts | typeof buildToolContracts {
   return mode === Mode.PLAN ? readOnlyToolContracts : buildToolContracts;
 }

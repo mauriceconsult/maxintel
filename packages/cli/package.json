@@ -7,11 +7,11 @@
     "dev": "bun run --watch src/index.tsx"
   },
   "dependencies": {
-    "@ai-sdk/react": "^4.0.73",
+    "@ai-sdk/react": "^4.0.87",
     "@maxintel/shared": "workspace:*",
     "@opentui/core": "^0.4.3",
     "@opentui/react": "^0.4.3",
-    "ai": "^7.0.70",
+    "ai": "^7.0.84",
     "date-fns": "^4.4.0",
     "hono": "^4.13.3",
     "open": "^11.0.1",

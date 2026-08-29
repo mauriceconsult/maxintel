@@ -1,13 +1,16 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "composite": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["bun", "node"],  
-     "paths": {
-    "@maxintel/shared": ["./packages/shared/src/index.ts"],
-    "@maxintel/shared/*": ["./packages/shared/src/*"]
-  }  
+    "types": [
+      "bun",
+      "node"
+    ]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ]
 }

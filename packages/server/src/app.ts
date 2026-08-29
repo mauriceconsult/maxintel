@@ -28,7 +28,9 @@ app.use("/sessions/*", requireAuth);
 app.use("/chat/*", requireAuth);
 
 // 4. Mount Sub-Routers
-app
+// The chained `.route()` result carries the route schema that Hono's RPC client
+// infers from. It must be captured — `typeof app` alone is a BlankSchema.
+export const routes = app
   .route("/sessions", sessions)
   .route("/chat", chat)
   .route("/platform", platform)
@@ -36,8 +38,7 @@ app
   .route("/billing", billing)
   .route("/admin", admin);
 
-// Export RPC AppType directly without unused runtime variable warnings
-export type AppType = typeof app;
+export type AppType = typeof routes;
 
 // 5. Global Error Handler
 app.onError((error, c) => {

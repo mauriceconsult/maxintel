@@ -4,9 +4,12 @@
   "private": true,
   "main": "./dist/app.js",
   "module": "./dist/app.js",
-  "types": "./dist/app.d.ts",
+  "types": "./src/app.ts",
   "exports": {
-    ".": "./dist/app.js"
+    ".": {
+      "types": "./src/app.ts",
+      "import": "./dist/app.js"
+    }
   },
   "scripts": {
     "dev": "bun run --hot src/index.ts",
@@ -15,11 +18,11 @@
     "postinstall": "bun run --cwd ../database db:generate"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.12",
-    "@ai-sdk/deepseek": "^3.0.28",
-    "@ai-sdk/google": "^4.0.51",
-    "@ai-sdk/openai": "^4.0.11",
-    "@ai-sdk/xai": "^4.0.40",
+    "@ai-sdk/anthropic": "^4.0.45",
+    "@ai-sdk/deepseek": "^3.0.36",
+    "@ai-sdk/google": "^4.0.57",
+    "@ai-sdk/openai": "^4.0.51",
+    "@ai-sdk/xai": "^4.0.49",
     "@clerk/backend": "^3.16.5",
     "@hono/node-server": "^2.1.1",
     "@hono/zod-validator": "^0.8.0",
@@ -27,7 +30,7 @@
     "@maxintel/shared": "workspace:*",
     "@sentry/bun": "^10.65.0",
     "@sentry/hono": "^10.65.0",
-    "ai": "^7.0.22",
+    "ai": "^7.0.84",
     "dotenv": "^17.4.2",
     "hono": "^4.12.29",
     "server": "^1.0.42",
