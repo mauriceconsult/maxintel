@@ -4,16 +4,16 @@
   "private": true,
   "main": "./dist/app.js",
   "module": "./dist/app.js",
-  "types": "./src/app.ts",
+  "types": "./dist/app.d.ts",
   "exports": {
     ".": {
-      "types": "./src/app.ts",
+      "types": "./dist/app.d.ts",
       "import": "./dist/app.js"
     }
   },
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "build": "bun build src/app.ts --outdir dist --target node",
+    "build": "bun run --filter @maxintel/server build && bun run --filter @maxintel/api build",
     "build:bun": "bun build src/index.ts --outdir dist --target bun",
     "postinstall": "bun run --cwd ../database db:generate"
   },
@@ -28,12 +28,14 @@
     "@hono/zod-validator": "^0.8.0",
     "@maxintel/database": "workspace:*",
     "@maxintel/shared": "workspace:*",
+    "@maxintel/server": "workspace:*",
     "@sentry/bun": "^10.65.0",
     "@sentry/hono": "^10.65.0",
     "ai": "^7.0.84",
     "dotenv": "^17.4.2",
     "hono": "^4.12.29",
     "server": "^1.0.42",
+    "vercel": "^59.16.0",
     "zod": "^4.4.3"
   }
 }
