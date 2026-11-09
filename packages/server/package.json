@@ -13,9 +13,12 @@
   },
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "build": "bun run --filter @maxintel/server build && bun run --filter @maxintel/api build",
+    "build": "tsup src/app.ts src/index.ts --format esm --out-dir dist --target node18 && tsc --project tsconfig.json --emitDeclarationOnly --noEmit false --declaration --outDir dist",
     "build:bun": "bun build src/index.ts --outdir dist --target bun",
     "postinstall": "bun run --cwd ../database db:generate"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.45",

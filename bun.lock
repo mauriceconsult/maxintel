@@ -104,6 +104,9 @@
         "vercel": "^59.16.0",
         "zod": "^4.4.3",
       },
+      "devDependencies": {
+        "tsup": "^8.5.1",
+      },
     },
     "packages/shared": {
       "name": "@maxintel/shared",

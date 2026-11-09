@@ -1,6 +1,6 @@
 {
   "framework": null,
-  "installCommand": "bun install",
+  "installCommand": "bun install --frozen-lockfile",
   "buildCommand": "bun run build:packages",
   "functions": {
     "api/index.ts": {

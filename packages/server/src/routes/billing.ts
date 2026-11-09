@@ -6,7 +6,18 @@ import { getClientBalance } from "../lib/credits";
 import { authenticateOAuthRequest } from "../lib/auth";
 import { ensureBillingAccount } from "../billing/chat-billing";
 import { CREDIT_BUNDLES, UGX_PER_CREDIT } from "../lib/pricing";
-import { initiateTopUp, processTopUpWebhook, reconcileTopUp } from "../lib/momo";
+import {
+  initiateTopUp,
+  processTopUpSettlement,
+  reconcileTopUp,
+} from "../lib/momo";
+import {
+  initiateDarajaTopUp,
+  darajaKesAmount,
+  isDarajaConfigured,
+  normalizeKenyanMsisdn,
+  reconcileDarajaTopUp,
+} from "../lib/daraja";
 import {
   buildCheckoutUrl,
   verifyCheckoutToken,
@@ -103,6 +114,7 @@ async function resolveCaller(c: Context): Promise<Caller | null> {
 const topUpSchema = z.object({
   bundleId: z.enum(["starter", "growth", "scale", "enterprise"]),
   phone: z.string().min(9),
+  provider: z.enum(["momo", "daraja"]).default("momo"),
   successUrl: z.url().optional(), // ← portal passes its own return URL
 });
 
@@ -205,41 +217,76 @@ const app = new Hono<AuthenticatedEnv>()
           id: b.id,
           credits: b.credits,
           ugx: b.ugx,
+          kes: isDarajaConfigured() ? darajaKesAmount(b.ugx) : 0,
           discountPct: b.discountPct,
         })),
         ugxPerCredit: UGX_PER_CREDIT,
         phonePlaceholder: process.env.MOMO_PHONE_PLACEHOLDER ?? "0772 123 456",
+        darajaPhonePlaceholder:
+          process.env.DARAJA_PHONE_PLACEHOLDER ?? "0712 345 678",
+        darajaEnabled: isDarajaConfigured(),
       }),
     );
   })
 
-  // ── POST /billing/topup — initiate MoMo top-up ─────────────────────────────
+  // ── POST /billing/topup — initiate a mobile-money top-up ───────────────────
   // Accepts either an API key or a checkout token (browser page).
   .post("/topup", zValidator("json", topUpSchema), async (c) => {
     const caller = await resolveCaller(c);
     if (!caller)
       return c.json({ error: "Invalid or inactive client" }, 401);
 
-    const { bundleId, phone, successUrl } = c.req.valid("json");
+    const { bundleId, phone, provider, successUrl } = c.req.valid("json");
 
     // A browser-supplied successUrl would be an open redirect on the status
     // endpoint, so a token-authenticated caller always uses the URL that was
     // signed into its token.
     const returnUrl = caller.returnUrl ?? successUrl;
+    let paymentPhone = phone;
+
+    if (provider === "daraja") {
+      if (!isDarajaConfigured()) {
+        return c.json({ error: "Safaricom Daraja is not configured" }, 503);
+      }
+      try {
+        paymentPhone = normalizeKenyanMsisdn(phone);
+      } catch {
+        return c.json(
+          { error: "Enter a valid Kenyan Safaricom mobile number" },
+          400,
+        );
+      }
+    }
 
     try {
-      const { referenceId, bundle } = await initiateTopUp({
-        clientId: caller.clientId,
-        bundleId,
-        phone,
-        successUrl: returnUrl,
-      });
+      const { referenceId, bundle } =
+        provider === "daraja"
+          ? await initiateDarajaTopUp({
+              clientId: caller.clientId,
+              bundleId,
+              phone: paymentPhone,
+              successUrl: returnUrl,
+            })
+          : await initiateTopUp({
+              clientId: caller.clientId,
+              bundleId,
+              phone: paymentPhone,
+              successUrl: returnUrl,
+            });
 
       return c.json({
         referenceId,
         status: "PENDING",
+        provider,
         pollUrl: `/billing/status/${referenceId}`, // ← portal polls this
-        message: `Approve the MTN MoMo prompt on ${phone}`,
+        ...(provider === "daraja" && {
+          amount: darajaKesAmount(bundle.ugx),
+          currency: "KES",
+        }),
+        message:
+          provider === "daraja"
+            ? `Approve the Safaricom M-PESA prompt on ${paymentPhone}`
+            : `Approve the MTN MoMo prompt on ${paymentPhone}`,
         bundle: { credits: bundle.credits, ugx: bundle.ugx },
       });
     } catch (err) {
@@ -264,7 +311,7 @@ const app = new Hono<AuthenticatedEnv>()
         body.referenceId ?? c.req.header("X-Reference-Id") ?? null;
 
       if (referenceId && body.status) {
-        await processTopUpWebhook(referenceId, body.status);
+        await processTopUpSettlement(referenceId, body.status);
       } else {
         console.warn("[billing/webhook] Unusable callback payload:", raw);
       }
@@ -273,6 +320,36 @@ const app = new Hono<AuthenticatedEnv>()
     }
     // Always acknowledge to MTN — prevents retry storms
     return c.json({ received: true });
+  })
+
+  // ── POST /billing/daraja/webhook — Safaricom STK Push callback ──────────────
+  .post("/daraja/webhook", async (c) => {
+    const raw = await c.req.text();
+    let body: {
+      Body?: {
+        stkCallback?: {
+          CheckoutRequestID?: string;
+        };
+      };
+    };
+
+    try {
+      body = JSON.parse(raw) as typeof body;
+    } catch (error) {
+      console.warn("[billing/daraja/webhook] Invalid callback JSON:", error);
+      return c.json({ ResultCode: 1, ResultDesc: "Invalid callback payload" }, 400);
+    }
+
+    const referenceId = body.Body?.stkCallback?.CheckoutRequestID;
+    if (!referenceId) {
+      console.warn("[billing/daraja/webhook] Missing CheckoutRequestID:", raw);
+      return c.json({ ResultCode: 1, ResultDesc: "Missing checkout reference" }, 400);
+    }
+
+    // Treat callback contents as a notification only; query Daraja directly
+    // before settling so a forged public callback cannot credit an account.
+    await reconcileDarajaTopUp(referenceId);
+    return c.json({ ResultCode: 0, ResultDesc: "Accepted" });
   })
 
   // GET /billing/status/:referenceId
@@ -298,7 +375,11 @@ const app = new Hono<AuthenticatedEnv>()
     if (!tx) return c.json({ error: "Reference not found" }, 404);
 
     if (tx.momoStatus === "PENDING") {
-      const settlement = await reconcileTopUp(referenceId);
+      const metadata = tx.metadata as Record<string, unknown> | null;
+      const settlement =
+        metadata?.paymentProvider === "daraja"
+          ? await reconcileDarajaTopUp(referenceId)
+          : await reconcileTopUp(referenceId);
       if (settlement) {
         tx = await db.creditTransaction.findUnique({
           where: { momoRef: referenceId },
@@ -332,6 +413,10 @@ const app = new Hono<AuthenticatedEnv>()
       referenceId,
       credits: tx.credits,
       ugxPaid: tx.ugxAmount,
+      ...(meta?.paymentProvider === "daraja" && {
+        paidAmount: meta.paidAmountKes,
+        paidCurrency: "KES",
+      }),
       balanceAfter: tx.balanceAfter,
       // Portal reads this and does: window.location.href = redirectUrl
       redirectUrl: successUrl
@@ -369,6 +454,10 @@ const app = new Hono<AuthenticatedEnv>()
         "Credits are added to your balance immediately on confirmation",
       ],
       portalUrl: `${publicBaseUrl()}/billing/checkout`,
+      paymentProviders: [
+        "momo",
+        ...(isDarajaConfigured() ? ["daraja"] : []),
+      ],
     });
   })
 

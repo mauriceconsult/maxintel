@@ -1,4 +1,4 @@
-// Server-rendered MoMo top-up checkout. No build step, no framework — a single
+// Server-rendered mobile-money top-up checkout. No build step, no framework — a single
 // self-contained HTML document, because the people who hit this page are
 // typically on a phone, on mobile data, one tap away from abandoning.
 
@@ -6,6 +6,7 @@ export type CheckoutBundle = {
   id: string;
   credits: number;
   ugx: number;
+  kes: number;
   discountPct: number;
 };
 
@@ -21,6 +22,8 @@ export type CheckoutPageData = {
   bundles: CheckoutBundle[];
   ugxPerCredit: number;
   phonePlaceholder: string;
+  darajaPhonePlaceholder: string;
+  darajaEnabled: boolean;
 };
 
 function escapeHtml(value: string): string {
@@ -69,6 +72,13 @@ h1{font-size:22px;font-weight:650;letter-spacing:-.02em;margin-bottom:6px}
   color:#8a8a93;margin:26px 0 10px;
 }
 .bundles{display:grid;gap:10px}
+.providers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.providers.single{grid-template-columns:1fr}
+.provider{
+  padding:12px;border:1px solid #24242c;border-radius:12px;background:#141419;
+  color:inherit;font:inherit;font-weight:600;cursor:pointer;
+}
+.provider[aria-checked="true"]{border-color:#ffcc00;background:rgba(255,204,0,.06)}
 .bundle{
   display:flex;justify-content:space-between;align-items:center;gap:12px;
   background:#141419;border:1px solid #24242c;border-radius:12px;
@@ -159,7 +169,7 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
           <span class="c">${b.credits.toLocaleString()} credits${rec}</span>
           <span class="m">${escapeHtml(b.id)}${save}</span>
         </span>
-        <span class="p">UGX ${b.ugx.toLocaleString()}</span>
+        <span class="p" data-ugx="${b.ugx}" data-kes="${b.kes}">UGX ${b.ugx.toLocaleString()}</span>
       </button>`;
     })
     .join("");
@@ -171,10 +181,18 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
         }.</div>`
       : "";
 
+  const darajaOption = data.darajaEnabled
+    ? `<button type="button" class="provider" role="radio" aria-checked="false" data-provider="daraja">Safaricom M-PESA</button>`
+    : "";
+
   const config = {
     token: data.token,
     returnUrl: data.returnUrl,
     recommended,
+    placeholders: {
+      momo: data.phonePlaceholder,
+      daraja: data.darajaPhonePlaceholder,
+    },
   };
 
   return `<!doctype html>
@@ -193,8 +211,8 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
 
   <!-- ── Step 1: choose bundle ─────────────────────────────────────────── -->
   <section id="step-choose">
-    <h1>Top up with MTN MoMo</h1>
-    <p class="sub">Credits are added to your balance the moment MTN confirms the payment.</p>
+    <h1>Top up credits</h1>
+    <p class="sub">Credits are added to your balance as soon as your payment is confirmed.</p>
 
     <div class="card">
       <div class="balance">
@@ -207,12 +225,18 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
     <div class="label">Choose a bundle</div>
     <div class="bundles" role="radiogroup" aria-label="Credit bundles">${bundleCards}</div>
 
-    <div class="label">MTN MoMo number</div>
+    <div class="label">Choose payment method</div>
+    <div class="providers${data.darajaEnabled ? "" : " single"}" role="radiogroup" aria-label="Payment method">
+      <button type="button" class="provider" role="radio" aria-checked="true" data-provider="momo">MTN MoMo</button>
+      ${darajaOption}
+    </div>
+
+    <div class="label" id="phone-label">MTN MoMo number</div>
     <input id="phone" type="tel" inputmode="numeric" autocomplete="tel"
            placeholder="${escapeHtml(data.phonePlaceholder)}" aria-label="MTN MoMo number">
-    <p class="hint">You will get an approval prompt on this handset. 1 credit = UGX ${data.ugxPerCredit}.</p>
+    <p class="hint" id="phone-hint">You will get an approval prompt on this handset. 1 credit = UGX ${data.ugxPerCredit}.</p>
 
-    <button class="primary" id="pay">Pay with MoMo</button>
+    <button class="primary" id="pay">Pay with MTN MoMo</button>
     <p class="err" id="error"></p>
   </section>
 
@@ -221,7 +245,7 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
     <div class="center">
       <div class="spinner"></div>
       <h1>Check your phone</h1>
-      <p class="sub">Approve the MTN MoMo prompt on <strong id="wait-phone"></strong> to complete the payment.</p>
+      <p class="sub">Approve the <span id="wait-provider">MTN MoMo</span> prompt on <strong id="wait-phone"></strong> to complete the payment.</p>
       <ol class="steps">
         <li>Open the prompt on your handset</li>
         <li>Enter your MoMo PIN</li>
@@ -251,7 +275,7 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
     </div>
   </section>
 
-  <p class="foot">Payments are processed by MTN Mobile Money.<br>No credits are charged until MTN confirms.</p>
+  <p class="foot">Payments are processed securely by your selected provider.<br>No credits are added until payment is confirmed.</p>
 </div>
 
 <script>
@@ -261,6 +285,7 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
   var TIMEOUT_MS = 180000;
 
   var selected = CONFIG.recommended;
+  var provider = 'momo';
   var pollTimer = null;
   var deadline = 0;
 
@@ -284,12 +309,37 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
     });
   });
 
+  var providers = document.querySelectorAll('.provider');
+  Array.prototype.forEach.call(providers, function (button) {
+    button.addEventListener('click', function () {
+      provider = button.getAttribute('data-provider');
+      Array.prototype.forEach.call(providers, function (item) {
+        item.setAttribute('aria-checked', String(item === button));
+      });
+      var isDaraja = provider === 'daraja';
+      $('phone-label').textContent = isDaraja ? 'Safaricom M-PESA number' : 'MTN MoMo number';
+      $('phone').placeholder = CONFIG.placeholders[provider];
+      $('phone').setAttribute('aria-label', $('phone-label').textContent);
+      $('phone-hint').textContent = isDaraja
+        ? 'You will get an M-PESA STK prompt on this handset. Prices are converted to KES using the configured exchange rate.'
+        : 'You will get an approval prompt on this handset. 1 credit = UGX ${data.ugxPerCredit}.';
+      Array.prototype.forEach.call(document.querySelectorAll('.bundle .p'), function (price) {
+        var amount = Number(price.getAttribute(isDaraja ? 'data-kes' : 'data-ugx'));
+        price.textContent = (isDaraja ? 'KES ' : 'UGX ') + amount.toLocaleString();
+      });
+      $('pay').textContent = isDaraja ? 'Pay with Safaricom M-PESA' : 'Pay with MTN MoMo';
+      $('error').textContent = '';
+    });
+  });
+
   // ── Submit ────────────────────────────────────────────────────────────
   $('pay').addEventListener('click', function () {
     var phone = $('phone').value.replace(/[^0-9+]/g, '');
     if (!selected) { $('error').textContent = 'Choose a bundle first.'; return; }
     if (phone.replace(/\\D/g, '').length < 9) {
-      $('error').textContent = 'Enter a valid MTN MoMo number.';
+      $('error').textContent = provider === 'daraja'
+        ? 'Enter a valid Kenyan Safaricom number.'
+        : 'Enter a valid MTN MoMo number.';
       $('phone').focus();
       return;
     }
@@ -304,6 +354,7 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
       body: JSON.stringify({
         bundleId: selected,
         phone: phone,
+        provider: provider,
         successUrl: CONFIG.returnUrl || undefined
       })
     })
@@ -315,6 +366,7 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
       })
       .then(function (body) {
         $('wait-phone').textContent = phone;
+        $('wait-provider').textContent = provider === 'daraja' ? 'Safaricom M-PESA' : 'MTN MoMo';
         $('wait-ref').textContent = 'Ref: ' + body.referenceId;
         show('step-waiting');
         deadline = Date.now() + TIMEOUT_MS;
@@ -322,7 +374,7 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
       })
       .catch(function (err) {
         $('pay').disabled = false;
-        $('pay').textContent = 'Pay with MoMo';
+        $('pay').textContent = provider === 'daraja' ? 'Pay with Safaricom M-PESA' : 'Pay with MTN MoMo';
         $('error').textContent = err.message || 'Could not start the payment.';
       });
   });
@@ -336,11 +388,11 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
       .then(function (body) {
         if (body.status === 'SUCCESSFUL') return succeed(body);
         if (body.status && body.status !== 'PENDING') {
-          return fail('Payment not completed', 'MTN reported: ' + body.status + '. Nothing was charged.');
+          return fail('Payment not completed', body.status + '. Nothing was charged.');
         }
         if (Date.now() > deadline) {
           return fail(
-            'Still waiting on MTN',
+            'Still waiting for confirmation',
             'We have not had a confirmation yet. If you approved the prompt, your credits ' +
             'will land shortly — reload this page to check.'
           );
@@ -382,7 +434,7 @@ export function renderCheckoutPage(data: CheckoutPageData): string {
 
   $('fail-retry').addEventListener('click', function () {
     $('pay').disabled = false;
-    $('pay').textContent = 'Pay with MoMo';
+    $('pay').textContent = provider === 'daraja' ? 'Pay with Safaricom M-PESA' : 'Pay with MTN MoMo';
     show('step-choose');
   });
 })();

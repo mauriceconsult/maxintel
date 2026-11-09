@@ -163,8 +163,8 @@ export async function initiateTopUp({
 }
 
 // ── Settle a top-up ──────────────────────────────────────────────────────────
-// Single entry point for both the MTN webhook and the status poll, so a payment
-// settles exactly once no matter which one observes it first.
+// Shared by provider callbacks and status reconciliation so each payment
+// settles exactly once regardless of which observes it first.
 
 export type TopUpSettlement = {
   status: string;
@@ -173,7 +173,7 @@ export type TopUpSettlement = {
   settled: boolean;
 };
 
-export async function processTopUpWebhook(
+export async function processTopUpSettlement(
   referenceId: string,
   status: "SUCCESSFUL" | "FAILED" | string,
 ): Promise<TopUpSettlement | null> {
@@ -189,7 +189,7 @@ export async function processTopUpWebhook(
   });
 
   if (!pending) {
-    console.warn("[billing/momo] Unknown referenceId:", referenceId);
+    console.warn("[billing/payment] Unknown referenceId:", referenceId);
     return null;
   }
 
@@ -208,7 +208,7 @@ export async function processTopUpWebhook(
       where: { id: pending.id },
       data: { momoStatus: status },
     });
-    console.warn("[billing/momo] Top-up not completed:", referenceId, status);
+    console.warn("[billing/payment] Top-up not completed:", referenceId, status);
     return { status, credits: pending.credits, balanceAfter: null, settled: false };
   }
 
@@ -257,7 +257,7 @@ export async function processTopUpWebhook(
   }
 
   console.log(
-    `[billing/momo] Top-up confirmed: ${pending.credits} credits → client ${pending.clientId}, balance now ${balanceAfter}`,
+    `[billing/payment] Top-up confirmed: ${pending.credits} credits → client ${pending.clientId}, balance now ${balanceAfter}`,
   );
 
   return {
@@ -307,5 +307,5 @@ export async function reconcileTopUp(
   // Still awaiting the payer — nothing to write.
   if (remoteStatus === "PENDING") return null;
 
-  return processTopUpWebhook(referenceId, remoteStatus);
+  return processTopUpSettlement(referenceId, remoteStatus);
 }

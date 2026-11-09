@@ -1,5 +1,3 @@
-// The server bundle is generated outside this API project's TypeScript file list.
-// @ts-expect-error The generated bundle is available at deployment/runtime.
 import { app } from "../packages/server/dist/app.js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
